@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LP5 — Manage Infrastructure as Code | AZ-400</title>
+    <style>
+        :root{
+            --bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:#30363d;
+            --text:#e6edf3;--muted:#8b949e;
+            --green:#3fb950;--blue:#58a6ff;--red:#f85149;--yellow:#d29922;
+            --orange:#e3b341;--purple:#bc8cff;--pink:#f778ba;--teal:#39d353;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:var(--bg);color:var(--text);font-family:'Cascadia Code','Fira Code',monospace,system-ui;line-height:1.6;font-size:14px}
+        nav{position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;padding:12px 20px;z-index:100;overflow-x:auto;gap:12px}
+        .nav-logo{display:flex;align-items:center;gap:8px;font-weight:bold;font-size:15px;flex-shrink:0;white-space:nowrap}
+        .wf-tabs{display:flex;gap:4px;flex-wrap:wrap}
+        .wf-tab{background:transparent;border:1px solid var(--border);color:var(--muted);padding:7px 13px;cursor:pointer;border-radius:6px;font-family:inherit;transition:.2s;font-size:12px;white-space:nowrap}
+        .wf-tab:hover{color:var(--text);background:var(--surface2)}
+        .wf-tab.active{color:var(--blue);border-color:var(--blue);background:rgba(88,166,255,.1)}
+        .container{max-width:1200px;margin:0 auto;padding:20px}
+        .tab-content{display:none}
+        .tab-content.active{display:block}
+        .panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px}
+        .panel-header{background:var(--surface2);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:8px;font-weight:bold;font-size:13px}
+        .ph-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+        .panel-body{padding:16px}
+        .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+        .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+        .callout{background:var(--surface);border-left:4px solid var(--blue);padding:12px 16px;margin-bottom:16px;border-radius:4px;display:flex;gap:12px;align-items:flex-start;font-size:13px}
+        .callout.warn{border-left-color:var(--yellow)}
+        .callout.success{border-left-color:var(--green)}
+        .callout.danger{border-left-color:var(--red)}
+        .callout.tip{border-left-color:var(--purple)}
+        .callout.exam{border-left-color:var(--orange);background:rgba(227,179,65,.05)}
+        .ci{font-size:18px;flex-shrink:0}
+        .comparison-table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:12px}
+        .comparison-table th{background:var(--surface2);color:var(--text);padding:10px 12px;text-align:left;border:1px solid var(--border);font-weight:bold}
+        .comparison-table td{padding:10px 12px;border:1px solid var(--border);background:var(--surface)}
+        .comparison-table tr:nth-child(even) td{background:var(--surface2)}
+        .badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:bold;margin-right:4px;margin-bottom:2px}
+        .badge.success{background:rgba(63,185,80,.2);color:var(--green)}
+        .badge.warning{background:rgba(210,153,34,.2);color:var(--yellow)}
+        .badge.error{background:rgba(248,81,73,.2);color:var(--red)}
+        .badge.blue{background:rgba(88,166,255,.2);color:var(--blue)}
+        .badge.purple{background:rgba(188,140,255,.2);color:var(--purple)}
+        .badge.orange{background:rgba(227,179,65,.2);color:var(--orange)}
+        .code-block{background:var(--surface2);border:1px solid var(--border);padding:12px;border-radius:6px;overflow-x:auto;margin-bottom:16px;color:var(--blue);font-family:'Cascadia Code',monospace;font-size:12px;white-space:pre}
+        .terminal{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px}
+        .tbar{background:var(--surface2);border-bottom:1px solid var(--border);padding:8px 12px;display:flex;align-items:center;gap:6px}
+        .td{width:12px;height:12px;border-radius:50%}
+        .tlabel{margin-left:auto;font-size:11px;color:var(--muted)}
+        .tbody{padding:12px;font-family:'Cascadia Code',monospace;font-size:12px}
+        .tc{color:var(--green);margin-bottom:4px;white-space:pre-wrap}
+        .tc::before{content:"$ ";color:var(--green);font-weight:bold}
+        .to{color:var(--muted);margin-bottom:4px;white-space:pre-wrap}
+        .tok{color:var(--green);margin-bottom:4px}
+        .twarn{color:var(--yellow);margin-bottom:4px}
+        .step-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+        .step-pill{background:rgba(88,166,255,.15);border:1px solid rgba(88,166,255,.3);color:var(--blue);padding:6px 14px;border-radius:999px;font-size:12px;cursor:pointer;transition:.2s}
+        .step-pill.active{background:rgba(88,166,255,.3);color:var(--text)}
+        .step-pill:hover{background:rgba(88,166,255,.25)}
+        button{background:rgba(63,185,80,.15);border:1px solid rgba(63,185,80,.3);color:var(--green);padding:8px 16px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:12px;transition:.2s;font-weight:bold;margin-right:8px;margin-bottom:8px}
+        button:hover{background:rgba(63,185,80,.25)}
+        button:active{transform:scale(.98)}
+        .do-dont{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+        .do-box{border-left:4px solid var(--green);background:var(--surface);padding:12px 16px;border-radius:4px}
+        .dont-box{border-left:4px solid var(--red);background:var(--surface);padding:12px 16px;border-radius:4px}
+        .do-box::before{content:"✓ DO: ";color:var(--green);font-weight:bold;display:block;margin-bottom:6px}
+        .dont-box::before{content:"✗ DON'T: ";color:var(--red);font-weight:bold;display:block;margin-bottom:6px}
+        .tool-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;cursor:pointer;transition:.2s}
+        .tool-card:hover{border-color:var(--blue);transform:translateY(-2px)}
+        .tool-card h3{color:var(--blue);margin-bottom:8px;font-size:13px}
+        .tool-card p{color:var(--muted);font-size:12px;line-height:1.5}
+        .section-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+        .flow-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+        .flow-box{background:var(--surface2);border:1px solid var(--border);padding:6px 12px;border-radius:6px;font-size:12px}
+        .flow-arrow{color:var(--muted);font-size:16px}
+        .key-term{color:var(--orange);font-weight:bold}
+        .highlight{color:var(--green)}
+        .subtle{color:var(--muted);font-size:12px}
+        .flash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:16px}
+        .flash-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;cursor:pointer;transition:.2s;position:relative}
+        .flash-card:hover{border-color:var(--purple);transform:translateY(-2px)}
+        .flash-card .q{color:var(--blue);font-size:12px;margin-bottom:8px;font-weight:bold}
+        .flash-card .a{color:var(--green);font-size:12px;display:none}
+        .flash-card.revealed .a{display:block}
+        .flash-card.revealed .q{color:var(--muted)}
+        .flash-hint{color:var(--muted);font-size:11px;margin-top:8px}
+        .reveal-all-btn{background:rgba(188,140,255,.15);border:1px solid rgba(188,140,255,.3);color:var(--purple);padding:8px 16px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:bold;margin-bottom:16px}
+        .reveal-all-btn:hover{background:rgba(188,140,255,.25)}
+        h2{font-size:16px;color:var(--text);margin-bottom:12px}
+        h3{font-size:13px;color:var(--text);margin-bottom:8px}
+        p{font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.6}
+        li{font-size:13px;color:var(--muted);margin-left:16px;margin-bottom:4px;line-height:1.5}
+        ul{margin-bottom:12px}
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="nav-logo">⚙️ <span>LP5 — Infrastructure as Code</span></div>
+    <div class="wf-tabs">
+        <button class="wf-tab active" onclick="showTab('m01')">M01 IaC Concepts</button>
+        <button class="wf-tab" onclick="showTab('m02')">M02 ARM Templates</button>
+        <button class="wf-tab" onclick="showTab('m03')">M03 Bicep</button>
+        <button class="wf-tab" onclick="showTab('m04')">M04 Azure CLI</button>
+        <button class="wf-tab" onclick="showTab('m05')">M05 Automation</button>
+        <button class="wf-tab" onclick="showTab('m06')">M06 DSC</button>
+        <button class="wf-tab" onclick="showTab('exam')">Exam Tips 🎯</button>
+    </div>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════════
+     M01 — IaC CONCEPTS
+══════════════════════════════════════════════════════════════ -->
+<div id="m01" class="tab-content active">
+
+    <div class="callout exam">
+        <span class="ci">🎯</span>
+        <div><strong>LP5 Throughline:</strong> Every manual step is a risk. Every undocumented change is a future incident. IaC is how you eliminate both.</div>
+    </div>
+
+    <div class="two-col">
+        <div class="panel">
+            <div class="panel-header"><div class="ph-dot" style="background:#f85149"></div>The Problem — Manual Infrastructure</div>
+            <div class="panel-body">
+                <p class="section-label">Why IaC Exists</p>
+                <ul>
+                    <li><span class="key-term">Snowflake servers</span> — each built slightly differently by different engineers over time</li>
+                    <li>Deployment steps vary per environment — dev ≠ test ≠ prod</li>
+                    <li>More verification steps, more elaborate manual processes</li>
+                    <li>Deploy on weekends to allow recovery time from errors</li>
+                    <li>Slower release cadence to minimise risk</li>
+                    <li>When one breaks — nobody knows exactly what's on it</li>
+                </ul>
+                <div class="callout danger" style="margin-top:12px">
+                    <span class="ci">🔥</span>
+                    <div>Snowflake problem: each server becomes unique over time. When it breaks, it's irreproducible.</div>
+                </div>
+            </div>
+        </div>
+        <div class="panel">
+            <div class="panel-header"><div class="ph-dot" style="background:#3fb950"></div>The Solution — Infrastructure as Code</div>
+            <div class="panel-body">
+                <p class="section-label">What IaC Gives You</p>
+                <ul>
+                    <li><span class="highlight">Consistent servers</span> between environments</li>
+                    <li>Environments created or scaled easily from one file</li>
+                    <li>Fully automated creation and updates</li>
+                    <li><span class="highlight">Immutable infrastructure</span> — don't patch, redeploy</li>
+                    <li>Blue/green deployments with zero downtime</li>
+                    <li>Treat servers as <strong>commodities, not pets</strong></li>
+                </ul>
+                <div class="callout success" style="margin-top:12px">
+                    <span class="ci">💡</span>
+                    <div>Your Bicep file IS the documentation. It can't drift from reality the way a Word doc can.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#58a6ff"></div>Imperative vs Declarative — Core Distinction</div>
+        <div class="panel-body">
+            <table class="comparison-table">
+                <tr>
+                    <th>Aspect</th>
+                    <th>🔧 Imperative (How)</th>
+                    <th>📋 Declarative (What)</th>
+                </tr>
+                <tr>
+                    <td>Approach</td>
+                    <td>Step-by-step instructions — you define the process</td>
+                    <td>Describe desired end state — system figures out how</td>
+                </tr>
+                <tr>
+                    <td>Example statement</td>
+                    <td>"Create a VM. Configure IIS. Start the service."</td>
+                    <td>"A VM must exist. IIS must be installed. Service must run."</td>
+                </tr>
+                <tr>
+                    <td>Run twice?</td>
+                    <td>May break — tries to create something that already exists</td>
+                    <td>Safe — checks state first, acts only if needed</td>
+                </tr>
+                <tr>
+                    <td>Idempotent?</td>
+                    <td>Not by default</td>
+                    <td>Yes — by design</td>
+                </tr>
+                <tr>
+                    <td>Azure tools</td>
+                    <td><span class="badge blue">Azure CLI</span> <span class="badge blue">PowerShell</span></td>
+                    <td><span class="badge success">ARM Templates</span> <span class="badge success">Bicep</span> <span class="badge success">DSC</span></td>
+                </tr>
+            </table>
+            <div class="callout exam">
+                <span class="ci">🎯</span>
+                <div><strong>EXAM:</strong> ARM, Bicep, DSC = <strong>declarative</strong>. Azure CLI = <strong>imperative</strong>. This distinction appears in idempotency questions. Know it cold.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#bc8cff"></div>Idempotency — Run It 10 Times, Same Result</div>
+        <div class="panel-body">
+            <div class="two-col">
+                <div>
+                    <p class="section-label">❌ Non-Idempotent (Bash Script)</p>
+                    <div class="code-block">Run 1 → creates storage account ✓
+Run 2 → tries to create again → ERROR
+Run 3 → ERROR again</div>
+                    <p>Script isn't idempotent. Every run after the first fails. Pipelines re-run. Retries fire. This breaks.</p>
+                </div>
+                <div>
+                    <p class="section-label">✅ Idempotent (ARM / Bicep)</p>
+                    <div class="code-block">Run 1 → creates storage account ✓
+Run 2 → already exists, nothing changes ✓
+Run 3 → still compliant ✓</div>
+                    <p>Declarative tools check state first. If already correct — nothing happens. Safe to run repeatedly.</p>
+                </div>
+            </div>
+            <div class="callout tip">
+                <span class="ci">💜</span>
+                <div><strong>Expert Insight:</strong> Idempotency is the operating model. Something drifts? Don't patch it. Discard it and redeploy from the template. The template is always the source of truth.</div>
+            </div>
+            <div class="callout success">
+                <span class="ci">📌</span>
+                <div><strong>Achieve Idempotence Two Ways:</strong> (1) Auto-configure and reconfigure existing resources — OR — (2) Discard existing resources and spin up a fresh environment.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#e3b341"></div>LP5 Tool Map — When to Use What</div>
+        <div class="panel-body">
+            <div class="three-col">
+                <div class="tool-card">
+                    <h3>⚡ ARM Templates</h3>
+                    <p>Native Azure IaC format. JSON. Everything else compiles to this. Use when you need maximum compatibility or need to understand what's actually sent to Azure.</p>
+                    <div style="margin-top:8px"><span class="badge blue">Declarative</span><span class="badge success">Idempotent</span></div>
+                </div>
+                <div class="tool-card">
+                    <h3>🚀 Bicep</h3>
+                    <p>Cleaner DSL that transpiles to ARM. Use for all new Azure IaC today. Same power, 80% less code. Microsoft's recommended approach.</p>
+                    <div style="margin-top:8px"><span class="badge blue">Declarative</span><span class="badge success">Idempotent</span></div>
+                </div>
+                <div class="tool-card">
+                    <h3>💻 Azure CLI</h3>
+                    <p>Imperative command-line. Use for ad-hoc work, scripting, one-off tasks, investigative queries. NOT for long-lived infrastructure management.</p>
+                    <div style="margin-top:8px"><span class="badge warning">Imperative</span></div>
+                </div>
+                <div class="tool-card">
+                    <h3>🤖 Azure Automation</h3>
+                    <p>Managed runbook execution. Use for operational tasks — scheduled jobs, patch management, start/stop VMs, anything that runs on a schedule or event.</p>
+                    <div style="margin-top:8px"><span class="badge blue">Operational</span></div>
+                </div>
+                <div class="tool-card">
+                    <h3>🔒 DSC</h3>
+                    <p>Desired State Configuration. Use to maintain and enforce server state continuously. Detects drift and corrects it automatically — on-going, not one-time.</p>
+                    <div style="margin-top:8px"><span class="badge success">Declarative</span><span class="badge purple">Continuous</span></div>
+                </div>
+                <div class="tool-card">
+                    <h3>🔑 Key Vault Integration</h3>
+                    <p>Never put secrets in templates. Reference Key Vault secrets from parameter files. Secret never appears as plaintext — fetched at deploy time.</p>
+                    <div style="margin-top:8px"><span class="badge error">Security Critical</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     M02 — ARM TEMPLATES
+══════════════════════════════════════════════════════════════ -->
+<div id="m02" class="tab-content">
+
+    <div class="callout exam">
+        <span class="ci">🎯</span>
+        <div><strong>Why ARM Matters:</strong> Everything — Bicep, Terraform, Pulumi — compiles to ARM JSON. ARM is what Azure's control plane actually speaks. Understanding it helps you read deployment errors and debug what's actually being sent.</div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#58a6ff"></div>ARM Template Structure</div>
+        <div class="panel-body">
+            <table class="comparison-table">
+                <tr>
+                    <th>Section</th>
+                    <th>Required?</th>
+                    <th>Purpose</th>
+                    <th>Example Use</th>
+                </tr>
+                <tr>
+                    <td><span class="key-term">$schema</span></td>
+                    <td><span class="badge success">Yes</span></td>
+                    <td>What version of ARM template format</td>
+                    <td>Tells ARM how to parse the template</td>
+                </tr>
+                <tr>
+                    <td><span class="key-term">contentVersion</span></td>
+                    <td><span class="badge success">Yes</span></td>
+                    <td>Your version number</td>
+                    <td>Track template versions (e.g. 1.0.0.0)</td>
+                </tr>
+                <tr>
+                    <td><span class="key-term">parameters</span></td>
+                    <td><span class="badge warning">Optional</span></td>
+                    <td>Inputs provided at deploy time</td>
+                    <td>Location, environment, naming</td>
+                </tr>
+                <tr>
+                    <td><span class="key-term">variables</span></td>
+                    <td><span class="badge warning">Optional</span></td>
+                    <td>Computed values, calculated once and reused</td>
+                    <td>Combine prefix + suffix for resource names</td>
+                </tr>
+                <tr>
+                    <td><span class="key-term">functions</span></td>
+                    <td><span class="badge warning">Optional</span></td>
+                    <td>Reusable expressions</td>
+                    <td>Custom naming logic</td>
+                </tr>
+                <tr>
+                    <td><span class="key-term">resources</span></td>
+                    <td><span class="badge error">Required ★</span></td>
+                    <td>What to actually build</td>
+                    <td>VMs, storage accounts, VNets, etc.</td>
+                </tr>
+                <tr>
+                    <td><span class="key-term">outputs</span></td>
+                    <td><span class="badge warning">Optional</span></td>
+                    <td>Return values after deployment</td>
+                    <td>Return connection string, resource ID</td>
+                </tr>
+            </table>
+            <div class="callout tip">
+                <span class="ci">💡</span>
+                <div><strong>Expert:</strong> Parameters + outputs are what make templates genuinely reusable across environments. One template, multiple parameter files for dev/test/prod.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="two-col">
+        <div class="panel">
+            <div class="panel-header"><div class="ph-dot" style="background:#e3b341"></div>Managing Dependencies — dependsOn</div>
+            <div class="panel-body">
+                <p>ARM deploys in parallel by default — fast, but breaks when order matters.</p>
+                <div class="code-block">virtualNetwork
+    (no dependencies)
+        ↑
+networkInterface
+    dependsOn: virtualNetwork
+        ↑
+virtualMachine
+    dependsOn: networkInterface
+              storageAccount</div>
+                <p style="margin-top:12px"><strong>Two ways to declare dependencies:</strong></p>
+                <ul>
+                    <li><span class="key-term">Explicit</span> — use the <code>dependsOn</code> element</li>
+                    <li><span class="key-term">Implicit</span> — use <code>reference()</code> function inside a resource; ARM infers the dependency automatically</li>
+                </ul>
+                <div class="callout warn" style="margin-top:12px">
+                    <span class="ci">⚠️</span>
+                    <div><strong>Circular References:</strong> A depends on B, B depends on A → deployment fails. Fix by breaking the cycle or moving a dependency into a child resource.</div>
+                </div>
+            </div>
+        </div>
+        <div class="panel">
+            <div class="panel-header"><div class="ph-dot" style="background:#3fb950"></div>Deployment Modes — Exam Critical</div>
+            <div class="panel-body">
+                <table class="comparison-table">
+                    <tr>
+                        <th>Mode</th>
+                        <th>Behaviour</th>
+                    </tr>
+                    <tr>
+                        <td><span class="badge success">Incremental</span> (default)</td>
+                        <td>Deploys what's in the template. Leaves everything else in the RG <strong>alone</strong>. Safe.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge error">Complete</span></td>
+                        <td>Deploys what's in the template. <strong>DELETES</strong> anything in the RG NOT in the template. Destructive.</td>
+                    </tr>
+                </table>
+                <div class="callout exam">
+                    <span class="ci">🎯</span>
+                    <div><strong>EXAM:</strong> Incremental = deploy what's in template, leave the rest alone. Complete = delete anything NOT in template. Incremental is almost always correct.</div>
+                </div>
+                <div class="callout tip">
+                    <span class="ci">💡</span>
+                    <div><strong>Expert:</strong> Use one resource group per deployment as best practice. Reduces blast radius if Complete mode is accidentally used.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#bc8cff"></div>Modularizing Templates — Linked Templates</div>
+        <div class="panel-body">
+            <div class="two-col">
+                <div>
+                    <div class="code-block">main.json (orchestrator)
+  ├── linked: network.json
+  ├── linked: storage.json
+  └── linked: compute.json
+
+Each template:
+  → single responsibility
+  → reusable across deployments
+  → independently testable</div>
+                    <p>Linked templates referenced by URL — must be accessible at deploy time. Usually stored in a storage account or public GitHub URL.</p>
+                </div>
+                <div>
+                    <p class="section-label">Benefits</p>
+                    <ul>
+                        <li>Main template passes parameters <strong>down</strong> to linked templates</li>
+                        <li>Linked templates return outputs <strong>back up</strong> to main</li>
+                        <li>Each component can be tested independently</li>
+                        <li>Reuse network template across multiple projects</li>
+                    </ul>
+                    <div class="callout tip" style="margin-top:12px">
+                        <span class="ci">💡</span>
+                        <div><strong>Securing linked templates:</strong> Store in private storage account, provide a SAS token to enable access during deployment.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#f85149"></div>Secrets in Templates — Never Hardcode</div>
+        <div class="panel-body">
+            <div class="do-dont">
+                <div class="dont-box">
+                    Template contains: <code style="color:var(--red)">"adminPassword": "MyP@ssw0rd!"</code><br><br>
+                    This is in Git version history forever. Even if deleted later, it's still there in the commit log. Credential scanners find it.
+                </div>
+                <div class="do-box">
+                    Parameter file references Key Vault secret by name.<br>
+                    ARM fetches the value directly from Key Vault at deploy time.<br>
+                    Secret never appears as plaintext anywhere — not in files, not in logs.
+                </div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-box">🔑 template.json</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-box">parameter file (references KV)</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-box">Azure Key Vault</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-box">secret fetched at deploy time</div>
+            </div>
+            <div class="callout exam">
+                <span class="ci">🎯</span>
+                <div><strong>EXAM:</strong> Key Vault reference goes in the <strong>parameter file</strong>, not the template itself. The deploying identity needs Owner or Contributor on the Key Vault secret.</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     M03 — BICEP
+══════════════════════════════════════════════════════════════ -->
+<div id="m03" class="tab-content">
+
+    <div class="callout exam">
+        <span class="ci">🎯</span>
+        <div><strong>Bicep = ARM with less noise.</strong> Same deployment engine, same resource types, same idempotency. Dramatically less code. Microsoft's recommended approach for new Azure IaC today.</div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#58a6ff"></div>ARM vs Bicep — Same Storage Account</div>
+        <div class="panel-body">
+            <div class="two-col">
+                <div>
+                    <p class="section-label">ARM JSON (~200 lines)</p>
+                    <div class="code-block">{
+  "$schema": "...",
+  "resources": [{
+    "type": "Microsoft.Storage/storageAccounts",
+    "apiVersion": "2021-06-01",
+    "name": "[parameters('storageAccountName')]",
+    "location": "[parameters('location')]",
+    "sku": { "name": "Standard_LRS" },
+    "kind": "StorageV2",
+    "properties": {}
+  }]
+}</div>
+                </div>
+                <div>
+                    <p class="section-label">Bicep (~10 lines)</p>
+                    <div class="code-block">param storageAccountName string
+param location string = resourceGroup().location
+
+resource storageAccount
+  'Microsoft.Storage/storageAccounts@2021-06-01' = {
+  name: storageAccountName
+  location: location
+  sku: { name: 'Standard_LRS' }
+  kind: 'StorageV2'
+}</div>
+                </div>
+            </div>
+            <div class="callout success">
+                <span class="ci">✅</span>
+                <div>Bicep is a DSL that <strong>transpiles to ARM</strong>. When you deploy, Bicep CLI converts it to ARM JSON first. You're still deploying ARM under the hood — Bicep is a better authoring experience, not a different deployment mechanism.</div>
+            </div>
+            <div class="callout warn">
+                <span class="ci">⚠️</span>
+                <div><strong>Converting ARM → Bicep:</strong> The decompiler works but is still maturing. Always review the output before treating it as production-ready.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#3fb950"></div>Bicep File Structure — Building Blocks</div>
+        <div class="panel-body">
+            <table class="comparison-table">
+                <tr>
+                    <th>Keyword</th>
+                    <th>Purpose</th>
+                    <th>Example</th>
+                </tr>
+                <tr>
+                    <td><span class="key-term">param</span></td>
+                    <td>Inputs with optional defaults and decorators</td>
+                    <td><code>param location string = resourceGroup().location</code></td>
+                </tr>
+                <tr>
+                    <td><span class="key-term">var</span></td>
+                    <td>Computed values, calculated once</td>
+                    <td><code>var name = '${prefix}${uniqueString(resourceGroup().id)}'</code></td>
+                </tr>
+                <tr>
+                    <td><span class="key-term">resource</span></td>
+                    <td>What to actually build</td>
+                    <td><code>resource sa 'Microsoft.Storage/storageAccounts@2021-06-01' = { }</code></td>
+                </tr>
+                <tr>
+                    <td><span class="key-term">module</span></td>
+                    <td>Reference another .bicep file (relative path)</td>
+                    <td><code>module storage './modules/storage.bicep' = { }</code></td>
+                </tr>
+                <tr>
+                    <td><span class="key-term">output</span></td>
+                    <td>Return values from deployment</td>
+                    <td><code>output storageId string = storageAccount.id</code></td>
+                </tr>
+                <tr>
+                    <td><span class="key-term">existing</span></td>
+                    <td>Reference a pre-existing resource not managed in this template</td>
+                    <td><code>resource kv 'Microsoft.KeyVault/vaults@2021-06-01-preview' existing = { name: 'myVault' }</code></td>
+                </tr>
+            </table>
+            <div class="two-col">
+                <div class="callout tip">
+                    <span class="ci">💜</span>
+                    <div><strong>Expert:</strong> The <code>existing</code> keyword is hugely useful in real-world work. Reference a Key Vault, subnet, or any other pre-existing resource without managing it in your template.</div>
+                </div>
+                <div class="callout tip">
+                    <span class="ci">💜</span>
+                    <div><strong>Expert:</strong> Param decorators like <code>@minLength(3)</code> and <code>@maxLength(24)</code> validate at development time — not just at deployment. ARM doesn't have this natively.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#bc8cff"></div>Bicep Features — Beyond Basic ARM</div>
+        <div class="panel-body">
+            <div class="three-col">
+                <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px">
+                    <h3 style="color:var(--green);margin-bottom:8px">🔁 Loops</h3>
+                    <p>Create multiple resources from one declaration. Deploy 5 storage accounts with different names using a single resource block.</p>
+                    <div class="code-block">resource sa 'Microsoft.Storage/storageAccounts@2021-06-01' = [for i in range(0,5): {
+  name: 'storage${i}'
+}]</div>
+                </div>
+                <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px">
+                    <h3 style="color:var(--yellow);margin-bottom:8px">❓ Conditionals</h3>
+                    <p>Deploy a resource only if a condition is true. Deploy a diagnostic setting only in production environments.</p>
+                    <div class="code-block">resource diag '...' = if (isProd) {
+  name: 'diagnostics'
+  ...
+}</div>
+                </div>
+                <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px">
+                    <h3 style="color:var(--blue);margin-bottom:8px">📝 String Interpolation</h3>
+                    <p>No more verbose <code>concat()</code> functions from ARM. Native string interpolation with <code>${}</code>.</p>
+                    <div class="code-block">// ARM:
+"[concat(parameters('prefix'), '-storage')]"
+
+// Bicep:
+'${prefix}-storage'</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#e3b341"></div>Deploying Bicep — GitHub Actions vs Azure Pipelines</div>
+        <div class="panel-body">
+            <div class="two-col">
+                <div>
+                    <p class="section-label">GitHub Actions</p>
+                    <div class="code-block">- name: Deploy Bicep
+  uses: azure/arm-deploy@v1
+  with:
+    subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION }}
+    resourceGroupName: ${{ secrets.AZURE_RG }}
+    template: ./main.bicep
+    parameters: storageAccountName=mystorageabc</div>
+                    <p style="margin-top:8px">✅ Handles Bicep natively — no pre-compilation needed. azure/arm-deploy@v1 transpiles automatically.</p>
+                </div>
+                <div>
+                    <p class="section-label">Azure Pipelines</p>
+                    <div class="code-block">- task: AzureResourceManagerTemplateDeployment@3
+  inputs:
+    deploymentScope: 'Resource Group'
+    azureResourceManagerConnection: 'MyServiceConnection'
+    resourceGroupName: 'my-rg'
+    location: 'eastus'
+    csmFile: 'main.bicep'
+    deploymentMode: 'Incremental'</div>
+                    <p style="margin-top:8px">⚠️ Note: <code>deploymentMode: 'Incremental'</code> — almost always what you want.</p>
+                </div>
+            </div>
+            <div class="callout warn">
+                <span class="ci">⚠️</span>
+                <div><strong>Lab Gotcha #1:</strong> Module paths must be relative — <code>'./modules/storage.bicep'</code> not <code>'storage.bicep'</code>. Missing the <code>./</code> causes file not found errors.</div>
+            </div>
+            <div class="callout warn">
+                <span class="ci">⚠️</span>
+                <div><strong>Lab Gotcha #2:</strong> API version mismatches — if you copy resource declarations from old docs the API version may be deprecated. Read the VS Code linting warnings — they're specific and helpful.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#f85149"></div>Installing Bicep</div>
+        <div class="panel-body">
+            <div class="terminal">
+                <div class="tbar"><div class="td" style="background:#f85149"></div><div class="td" style="background:#e3b341"></div><div class="td" style="background:#3fb950"></div><div class="tlabel">Bicep CLI Setup</div></div>
+                <div class="tbody">
+                    <div class="tc">az bicep install</div>
+                    <div class="to"># Requires Azure CLI 2.20.0 or later</div>
+                    <div class="tc">az bicep version</div>
+                    <div class="tok">Bicep CLI version 0.x.x</div>
+                    <div class="tc">az bicep upgrade</div>
+                    <div class="tc">az bicep build --file main.bicep</div>
+                    <div class="to"># Generates main.json — the compiled ARM JSON</div>
+                </div>
+            </div>
+            <div class="callout tip">
+                <span class="ci">💡</span>
+                <div>Install both the Bicep CLI AND the VS Code extension. The extension gives IntelliSense, linting, and type checking. It'll flag a wrong property name before you even deploy.</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     M04 — AZURE CLI
+══════════════════════════════════════════════════════════════ -->
+<div id="m04" class="tab-content">
+
+    <div class="callout warn">
+        <span class="ci">⚠️</span>
+        <div><strong>Key Distinction:</strong> Azure CLI is <strong>imperative</strong> — you're giving instructions, not describing state. Right for ad-hoc, scripting, one-off tasks. <strong>Wrong</strong> for managing long-lived infrastructure — use ARM/Bicep for that.</div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#58a6ff"></div>Azure CLI — Command Pattern</div>
+        <div class="panel-body">
+            <div class="callout success">
+                <span class="ci">📐</span>
+                <div><strong>Pattern:</strong> <code>az [group] [subgroup] [command] [--parameters]</code><br>
+                Once you know this, you can guess commands you've never seen before.</div>
+            </div>
+            <div class="code-block">az storage account create --name mystorage --resource-group myrg
+
+az        → the tool
+storage   → resource group
+account   → subgroup
+create    → command
+--name, --resource-group  → parameters</div>
+            <div class="two-col" style="margin-top:16px">
+                <div>
+                    <p class="section-label">Interactive Mode</p>
+                    <div class="terminal">
+                        <div class="tbar"><div class="td" style="background:#f85149"></div><div class="td" style="background:#e3b341"></div><div class="td" style="background:#3fb950"></div><div class="tlabel">Explore Azure</div></div>
+                        <div class="tbody">
+                            <div class="tc">az vm list --output table</div>
+                            <div class="to">Lists all VMs in current subscription</div>
+                            <div class="tc">az account show</div>
+                            <div class="to">Shows current subscription</div>
+                            <div class="tc">az find 'create storage'</div>
+                            <div class="to">Searches for the right command</div>
+                            <div class="tc">az storage account create --help</div>
+                            <div class="to">Full parameter docs in terminal</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <p class="section-label">Scripted Mode</p>
+                    <div class="terminal">
+                        <div class="tbar"><div class="td" style="background:#f85149"></div><div class="td" style="background:#e3b341"></div><div class="td" style="background:#3fb950"></div><div class="tlabel">Deploy Sequence</div></div>
+                        <div class="tbody">
+                            <div class="tc">az login</div>
+                            <div class="tc">az group create --name demo-rg --location eastus</div>
+                            <div class="tc">az deployment group create \
+  --resource-group demo-rg \
+  --template-file main.bicep \
+  --parameters storageAccountName=mystorageabc</div>
+                            <div class="tc">az resource list --resource-group demo-rg -o table</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#3fb950"></div>CLI vs PowerShell Az Module</div>
+        <div class="panel-body">
+            <table class="comparison-table">
+                <tr>
+                    <th>Aspect</th>
+                    <th>Azure CLI</th>
+                    <th>PowerShell Az Module</th>
+                </tr>
+                <tr>
+                    <td>Output format</td>
+                    <td>Text or JSON — string-based</td>
+                    <td>Objects — can pipeline into other cmdlets</td>
+                </tr>
+                <tr>
+                    <td>Platform preference</td>
+                    <td>Linux / Mac native teams</td>
+                    <td>Windows native teams</td>
+                </tr>
+                <tr>
+                    <td>Shell</td>
+                    <td>At home in Bash</td>
+                    <td>At home in PowerShell</td>
+                </tr>
+                <tr>
+                    <td>Capability</td>
+                    <td>Fully capable for all Azure tasks</td>
+                    <td>Fully capable for all Azure tasks</td>
+                </tr>
+                <tr>
+                    <td>Cross-platform</td>
+                    <td>Yes — same commands everywhere</td>
+                    <td>Yes (PowerShell Core 6+)</td>
+                </tr>
+            </table>
+            <div class="callout tip">
+                <span class="ci">💡</span>
+                <div><strong>Expert:</strong> It's team preference, not capability. CLI for bash-heavy teams. PowerShell for teams already scripting in PS. Both can deploy ARM/Bicep templates, manage resources, query status — everything.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#e3b341"></div>Underused CLI Features</div>
+        <div class="panel-body">
+            <div class="two-col">
+                <div>
+                    <h3>🔍 az find</h3>
+                    <p>Built-in command search engine. Describe what you want to do — CLI finds the right command.</p>
+                    <div class="terminal">
+                        <div class="tbar"><div class="td" style="background:#f85149"></div><div class="td" style="background:#e3b341"></div><div class="td" style="background:#3fb950"></div></div>
+                        <div class="tbody">
+                            <div class="tc">az find 'create storage account'</div>
+                            <div class="tok">az storage account create</div>
+                            <div class="tc">az find 'deploy bicep template'</div>
+                            <div class="tok">az deployment group create</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3>❓ --help flag</h3>
+                    <p>Full parameter docs for any command without leaving the terminal. Specific, accurate, always up to date.</p>
+                    <div class="terminal">
+                        <div class="tbar"><div class="td" style="background:#f85149"></div><div class="td" style="background:#e3b341"></div><div class="td" style="background:#3fb950"></div></div>
+                        <div class="tbody">
+                            <div class="tc">az storage account create --help</div>
+                            <div class="to">Command: az storage account create</div>
+                            <div class="to">Arguments: --name, --resource-group,</div>
+                            <div class="to">           --location, --sku, --kind...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     M05 — AZURE AUTOMATION
+══════════════════════════════════════════════════════════════ -->
+<div id="m05" class="tab-content">
+
+    <div class="callout exam">
+        <span class="ci">🎯</span>
+        <div><strong>Key Distinction:</strong> Azure Automation is for <strong>operational tasks</strong> — scheduled jobs, patch management, start/stop VMs. NOT infrastructure provisioning (that's ARM/Bicep). Think: "things that need to run regularly."</div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#58a6ff"></div>Azure Automation Capabilities</div>
+        <div class="panel-body">
+            <div class="three-col">
+                <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px">
+                    <h3 style="color:var(--blue);margin-bottom:8px">📅 Managed Shared Resources</h3>
+                    <p>Schedules, modules, variables, credentials, certificates, connections — all shared across runbooks in the account.</p>
+                </div>
+                <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px">
+                    <h3 style="color:var(--green);margin-bottom:8px">🔒 State Configuration</h3>
+                    <p>DSC integrated into Azure Automation — managed pull server for configuration enforcement across nodes.</p>
+                </div>
+                <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px">
+                    <h3 style="color:var(--yellow);margin-bottom:8px">🔄 Update Management</h3>
+                    <p>Patch management for Windows and Linux VMs. Schedule update windows, track compliance.</p>
+                </div>
+                <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px">
+                    <h3 style="color:var(--purple);margin-bottom:8px">🔗 Source Control Integration</h3>
+                    <p>Sync runbooks with GitHub or Azure DevOps. Runbooks belong in version control — audit trail, PR reviews, rollback.</p>
+                </div>
+                <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px">
+                    <h3 style="color:var(--orange);margin-bottom:8px">🌐 Not Azure-Only</h3>
+                    <p>Can reach any system with an internet API. On-premises servers, third-party services, external databases — anything scriptable.</p>
+                </div>
+                <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px">
+                    <h3 style="color:var(--teal);margin-bottom:8px">🏢 Hybrid Runbook Worker</h3>
+                    <p>Run runbooks against on-premises resources. Agent installed on-prem, connects outbound to Azure on port 443 — no inbound firewall rules needed.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#3fb950"></div>Runbook Types</div>
+        <div class="panel-body">
+            <table class="comparison-table">
+                <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Best For</th>
+                </tr>
+                <tr>
+                    <td><span class="badge blue">Graphical</span></td>
+                    <td>Visual workflow builder — no code required</td>
+                    <td>Simple flows, non-technical authors</td>
+                </tr>
+                <tr>
+                    <td><span class="badge success">PowerShell</span></td>
+                    <td>Standard PS script — most common type</td>
+                    <td>Windows-heavy environments, most operational tasks</td>
+                </tr>
+                <tr>
+                    <td><span class="badge warning">PowerShell Workflow</span></td>
+                    <td>Built on WF Foundation — parallel execution + checkpoints</td>
+                    <td>Long-running operations, multi-machine, resumable tasks</td>
+                </tr>
+                <tr>
+                    <td><span class="badge purple">Python</span></td>
+                    <td>Python 2/3 support</td>
+                    <td>Linux-heavy environments, data processing</td>
+                </tr>
+            </table>
+            <div class="callout warn">
+                <span class="ci">⚠️</span>
+                <div><strong>Python Gallery Gotcha:</strong> Python runbooks in the gallery cannot be imported via PowerShell cmdlets. Use the Azure portal for Python runbook imports.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="two-col">
+        <div class="panel">
+            <div class="panel-header"><div class="ph-dot" style="background:#bc8cff"></div>PowerShell Workflow vs Regular PS</div>
+            <div class="panel-body">
+                <table class="comparison-table">
+                    <tr>
+                        <th>Feature</th>
+                        <th>Regular PS</th>
+                        <th>PS Workflow</th>
+                    </tr>
+                    <tr>
+                        <td>Execution</td>
+                        <td>Sequential only</td>
+                        <td>Parallel supported</td>
+                    </tr>
+                    <tr>
+                        <td>Checkpoints</td>
+                        <td>None</td>
+                        <td>Checkpoint-Workflow</td>
+                    </tr>
+                    <tr>
+                        <td>On failure</td>
+                        <td>Start over from beginning</td>
+                        <td>Resume from last checkpoint</td>
+                    </tr>
+                    <tr>
+                        <td>Machines</td>
+                        <td>Single machine</td>
+                        <td>Multi-machine capable</td>
+                    </tr>
+                    <tr>
+                        <td>Duration</td>
+                        <td>Short-lived</td>
+                        <td>Long-running OK</td>
+                    </tr>
+                    <tr>
+                        <td>Keyword</td>
+                        <td><code>function</code></td>
+                        <td><code>workflow</code></td>
+                    </tr>
+                    <tr>
+                        <td>Parameters</td>
+                        <td><code>param</code> (lowercase)</td>
+                        <td><code>Param</code> (capital P)</td>
+                    </tr>
+                </table>
+                <div class="callout exam">
+                    <span class="ci">🎯</span>
+                    <div><strong>EXAM:</strong> Three syntax differences tested: <code>workflow</code> keyword (not function), <code>Param</code> capital P, workflow command syntax differences from regular PS scripts.</div>
+                </div>
+            </div>
+        </div>
+        <div class="panel">
+            <div class="panel-header"><div class="ph-dot" style="background:#e3b341"></div>Checkpoints & Parallel Processing</div>
+            <div class="panel-body">
+                <p class="section-label">Checkpoints</p>
+                <div class="code-block">workflow LongRunningTask {
+    # Step 1 work...
+    Checkpoint-Workflow   # ← save state here
+    # Step 2 work...
+    Checkpoint-Workflow   # ← save state here
+    # Step 3 fails → resumes from Step 2
+    # NOT from the beginning
+}</div>
+                <p class="subtle" style="margin-bottom:12px">4-hour runbook fails at hour 3 → without checkpoints: restart from hour 0. With checkpoints: resume from last save. Huge difference at scale.</p>
+                <p class="section-label">Parallel Processing</p>
+                <div class="code-block">Parallel {
+    'Restart-VM -Name VM1'   ─┐
+    'Restart-VM -Name VM2'   ─┼─ simultaneous
+    'Restart-VM -Name VM3'   ─┘
+}
+# Then continue sequentially...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#f85149"></div>Automation Shared Resources & Webhooks</div>
+        <div class="panel-body">
+            <div class="two-col">
+                <div>
+                    <p class="section-label">8 Shared Resource Types</p>
+                    <table class="comparison-table">
+                        <tr><td><span class="badge blue">Schedules</span></td><td>Time-based runbook triggers</td></tr>
+                        <tr><td><span class="badge blue">Modules</span></td><td>PS modules available to runbooks</td></tr>
+                        <tr><td><span class="badge blue">Modules Gallery</span></td><td>Import from PS Gallery</td></tr>
+                        <tr><td><span class="badge blue">Python Packages</span></td><td>For Python runbooks</td></tr>
+                        <tr><td><span class="badge blue">Connections</span></td><td>Named credentials to external services</td></tr>
+                        <tr><td><span class="badge blue">Credentials</span></td><td>Username/password pairs, stored securely</td></tr>
+                        <tr><td><span class="badge blue">Certificates</span></td><td>X.509 certs for authentication</td></tr>
+                        <tr><td><span class="badge error">Variables (Encrypted)</span></td><td>Key-value pairs — can be encrypted ★</td></tr>
+                    </table>
+                    <div class="callout tip">
+                        <span class="ci">💜</span>
+                        <div><strong>Expert:</strong> Encrypted variables = right way to store API keys, passwords, tokens. Masked in job output, accessible across all runbooks. Don't hardcode credentials in runbook code.</div>
+                    </div>
+                </div>
+                <div>
+                    <p class="section-label">Webhooks — External Triggers</p>
+                    <div class="code-block">External system (GitHub, DevOps, app)
+        |
+        | HTTP POST
+        ▼
+https://&lt;server&gt;/token?&lt;token&gt;
+        |
+        ▼
+  Runbook executes</div>
+                    <div class="callout danger" style="margin-top:12px">
+                        <span class="ci">🔥</span>
+                        <div><strong>Critical:</strong> Webhook URL contains an opaque token. Anyone with it can trigger the runbook — treat like a secret. It has an <strong>expiry date</strong> — when expired, it silently stops working. No error. Set a reminder to rotate it.</div>
+                    </div>
+                    <div class="callout warn" style="margin-top:8px">
+                        <span class="ci">⚠️</span>
+                        <div>URL is shown <strong>once only</strong> at creation. Copy it immediately and store securely. If lost, create a new webhook.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#39d353"></div>Hybrid Runbook Worker</div>
+        <div class="panel-body">
+            <div class="two-col">
+                <div>
+                    <div class="code-block">Azure Automation Account
+        |
+        | (sends runbook jobs)
+        ▼
+Hybrid Runbook Worker Group
+  ├── On-prem server 1  (TCP 443 outbound)
+  └── On-prem server 2
+
+Can reach:
+  ├── Local servers
+  ├── Local databases
+  ├── On-prem network resources
+  └── Anything in the private DC</div>
+                </div>
+                <div>
+                    <h3 style="margin-bottom:12px">Why It Matters</h3>
+                    <ul>
+                        <li>Run automation against resources that can't be directly connected to Azure</li>
+                        <li>Old on-premises databases, legacy servers, air-gapped systems</li>
+                        <li>Agent installed on-prem, registers with Automation Account</li>
+                    </ul>
+                    <div class="callout success" style="margin-top:12px">
+                        <span class="ci">✅</span>
+                        <div><strong>Enterprise Key Point:</strong> Connection is <strong>outbound only</strong> on port 443. On-prem machine initiates. Azure never initiates inbound. No firewall rule changes needed — 443 outbound is almost always already allowed.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     M06 — DSC
+══════════════════════════════════════════════════════════════ -->
+<div id="m06" class="tab-content">
+
+    <div class="callout exam">
+        <span class="ci">🎯</span>
+        <div><strong>Critical Distinction:</strong> ARM/Bicep/CLI <em>create</em> resources — one time. DSC <em>maintains</em> them — continuously. If something drifts, DSC detects and corrects it automatically.</div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#f85149"></div>Configuration Drift — The Problem DSC Solves</div>
+        <div class="panel-body">
+            <div class="two-col">
+                <div>
+                    <div class="code-block">Day 1:  Server deployed correctly via IaC ✓
+
+Day 30: Engineer opens port 8080 "for debugging"
+        "I'll close it after testing"
+
+Day 60: Port 8080 still open — nobody noticed
+        Security audit flags it as a finding
+
+Day 90: Different engineer installs a package
+        "Just temporary"
+        Server now bears no resemblance to template
+
+Result: Security risk, compliance failure,
+        incident waiting to happen</div>
+                </div>
+                <div>
+                    <p>Each individual change seems harmless. The accumulation is the problem. At scale — hundreds of servers — this happens constantly. Manual auditing doesn't scale.</p>
+                    <div class="callout success" style="margin-top:12px">
+                        <span class="ci">✅</span>
+                        <div><strong>DSC Solution:</strong> Detects drift and corrects it automatically. On a schedule. Without human intervention. No ticket raised. Just automatic remediation.</div>
+                    </div>
+                    <div class="callout tip" style="margin-top:8px">
+                        <span class="ci">💜</span>
+                        <div><strong>Expert:</strong> With Azure Automation + Log Analytics: "Which of my 1,000 servers are non-compliant right now?" — one query, dashboard, real-time. That's what compliance teams need.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#58a6ff"></div>DSC Components</div>
+        <div class="panel-body">
+            <div class="three-col">
+                <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px">
+                    <h3 style="color:var(--green);margin-bottom:8px">📋 Configurations</h3>
+                    <p>Idempotent declarative PowerShell scripts. Describe the desired world: "IIS must be installed, service must run, file must exist." Don't describe <em>how</em> — just the end state.</p>
+                </div>
+                <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px">
+                    <h3 style="color:var(--blue);margin-bottom:8px">🔧 Resources</h3>
+                    <p>PowerShell scripts that compile to MOF files. Know how to check and enforce each thing — WindowsFeature knows how to check if IIS is installed and install it if not.</p>
+                </div>
+                <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px">
+                    <h3 style="color:var(--orange);margin-bottom:8px">⚙️ LCM</h3>
+                    <p>Local Configuration Manager — client engine on each node. Periodically checks actual state vs desired state. When it finds drift, it remediates automatically.</p>
+                </div>
+            </div>
+            <div class="flow-row" style="margin-top:8px">
+                <div class="flow-box">Configuration (PS script)</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-box">Compiles to MOF file</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-box">LCM applies to node</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-box">Checks state on schedule</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-box">Remediates if drifted</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#3fb950"></div>Push vs Pull Mode — Exam Critical</div>
+        <div class="panel-body">
+            <table class="comparison-table">
+                <tr>
+                    <th>Aspect</th>
+                    <th>📤 Push Mode</th>
+                    <th>📥 Pull Mode</th>
+                </tr>
+                <tr>
+                    <td>Who initiates</td>
+                    <td>You actively push config to specific nodes</td>
+                    <td>Nodes pull config from pull server on a schedule</td>
+                </tr>
+                <tr>
+                    <td>Scale</td>
+                    <td>Good for ad-hoc or small scale</td>
+                    <td>Scalable — good for large fleets</td>
+                </tr>
+                <tr>
+                    <td>Timing</td>
+                    <td>You control when it applies</td>
+                    <td>Nodes self-remediate automatically</td>
+                </tr>
+                <tr>
+                    <td>Infrastructure</td>
+                    <td>No pull server needed</td>
+                    <td>Needs a pull server (Azure Automation manages this)</td>
+                </tr>
+                <tr>
+                    <td>Best for</td>
+                    <td>Ad-hoc, testing, immediate application</td>
+                    <td>Production, large fleets, continuous compliance</td>
+                </tr>
+            </table>
+            <div class="callout exam">
+                <span class="ci">🎯</span>
+                <div><strong>EXAM:</strong> Push = you push to nodes. Pull = nodes pull on schedule. <strong>Azure Automation State Configuration = managed pull server</strong> in the cloud — no infrastructure to run yourself.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#bc8cff"></div>DSC Configuration File Structure</div>
+        <div class="panel-body">
+            <div class="two-col">
+                <div>
+                    <div class="code-block">Configuration LabConfig {
+  Node WebServer {
+    WindowsFeature IIS {
+      Ensure = 'Present'
+      Name   = 'Web-Server'
+    }
+    File WebsiteContent {
+      Ensure          = 'Present'
+      SourcePath      = '\\share\website'
+      DestinationPath = 'C:\inetpub\wwwroot'
+    }
+  }
+}</div>
+                </div>
+                <div>
+                    <p class="section-label">Structure Breakdown</p>
+                    <table class="comparison-table">
+                        <tr>
+                            <td><span class="key-term">Configuration block</span></td>
+                            <td>Name of the configuration</td>
+                        </tr>
+                        <tr>
+                            <td><span class="key-term">Node block</span></td>
+                            <td>Which nodes to configure</td>
+                        </tr>
+                        <tr>
+                            <td><span class="key-term">Resource blocks</span></td>
+                            <td>The actual desired state</td>
+                        </tr>
+                        <tr>
+                            <td><code>Ensure = 'Present'</code></td>
+                            <td>This thing must exist</td>
+                        </tr>
+                        <tr>
+                            <td><code>Ensure = 'Absent'</code></td>
+                            <td>This thing must NOT exist</td>
+                        </tr>
+                    </table>
+                    <div class="callout tip" style="margin-top:8px">
+                        <span class="ci">💡</span>
+                        <div>You write PowerShell-style code → it compiles to a MOF binary the LCM consumes. MOF = Managed Object Format.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#e3b341"></div>DSC on Linux — Resource Differences</div>
+        <div class="panel-body">
+            <table class="comparison-table">
+                <tr>
+                    <th>Aspect</th>
+                    <th>Windows DSC</th>
+                    <th>Linux DSC</th>
+                </tr>
+                <tr>
+                    <td>Core concepts</td>
+                    <td>Same (Config, Resources, LCM, Push/Pull)</td>
+                    <td>Same (Config, Resources, LCM, Push/Pull)</td>
+                </tr>
+                <tr>
+                    <td>File resource</td>
+                    <td><span class="badge blue">File</span></td>
+                    <td><span class="badge warning">nxFile</span></td>
+                </tr>
+                <tr>
+                    <td>Service resource</td>
+                    <td><span class="badge blue">Service</span></td>
+                    <td><span class="badge warning">nxService</span></td>
+                </tr>
+                <tr>
+                    <td>Package resource</td>
+                    <td><span class="badge blue">WindowsFeature / Package</span></td>
+                    <td><span class="badge warning">nxPackage</span></td>
+                </tr>
+                <tr>
+                    <td>Prefix meaning</td>
+                    <td>—</td>
+                    <td><strong>nx</strong> = non-Windows</td>
+                </tr>
+                <tr>
+                    <td>Supported distros</td>
+                    <td>—</td>
+                    <td>CentOS, Debian, Oracle Linux, Red Hat, SUSE, Ubuntu</td>
+                </tr>
+            </table>
+            <div class="callout exam">
+                <span class="ci">🎯</span>
+                <div><strong>EXAM:</strong> DSC Linux resource types use the <code>nx</code> prefix — nxFile, nxService, nxPackage. If you see a question about DSC on Linux, look for the nx prefix in the answers.</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     EXAM TIPS
+══════════════════════════════════════════════════════════════ -->
+<div id="exam" class="tab-content">
+
+    <div class="callout exam">
+        <span class="ci">🎯</span>
+        <div><strong>LP5 Exam Strategy:</strong> Two objectives are tested — (1) IaC principles (declarative, idempotent, immutable), (2) which tool for which scenario (ARM, Bicep, CLI, DSC, Azure Automation).</div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#e3b341"></div>Top Exam Traps — LP5</div>
+        <div class="panel-body">
+            <table class="comparison-table">
+                <tr>
+                    <th>#</th>
+                    <th>Trap</th>
+                    <th>Correct Answer</th>
+                </tr>
+                <tr>
+                    <td>1</td>
+                    <td>Azure CLI is declarative</td>
+                    <td>❌ CLI is <strong>imperative</strong>. ARM, Bicep, DSC are declarative.</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Complete mode leaves existing resources alone</td>
+                    <td>❌ Complete mode <strong>deletes</strong> anything not in the template. Incremental leaves them alone.</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>Bicep is a different deployment engine from ARM</td>
+                    <td>❌ Bicep <strong>transpiles to ARM JSON</strong>. Same deployment engine. Bicep is authoring-layer only.</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td>Secrets should go in the ARM template parameters section</td>
+                    <td>❌ Never in the template. Key Vault reference goes in the <strong>parameter file</strong>.</td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td>PowerShell Workflow uses lowercase <code>param</code></td>
+                    <td>❌ Workflows require <code>Param</code> with <strong>capital P</strong>.</td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td>Pull mode = you push to specific nodes</td>
+                    <td>❌ <strong>Pull = nodes pull from server on schedule</strong>. Push = you push to nodes.</td>
+                </tr>
+                <tr>
+                    <td>7</td>
+                    <td>Azure Automation DSC requires you to run a pull server</td>
+                    <td>❌ Azure Automation State Configuration <strong>is a managed pull server</strong> — no infrastructure to run.</td>
+                </tr>
+                <tr>
+                    <td>8</td>
+                    <td>DSC Linux resources use the same names as Windows</td>
+                    <td>❌ Linux uses <strong>nx prefix</strong> — nxFile, nxService, nxPackage.</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#58a6ff"></div>Tool Selection — Scenario Matching</div>
+        <div class="panel-body">
+            <table class="comparison-table">
+                <tr>
+                    <th>Scenario</th>
+                    <th>Right Tool</th>
+                    <th>Why</th>
+                </tr>
+                <tr>
+                    <td>Deploy a VNet, subnet, and VM consistently across dev/test/prod</td>
+                    <td><span class="badge success">ARM / Bicep</span></td>
+                    <td>Declarative, idempotent, repeatable infrastructure provisioning</td>
+                </tr>
+                <tr>
+                    <td>Stop all dev VMs at 7pm to save cost</td>
+                    <td><span class="badge blue">Azure Automation</span></td>
+                    <td>Scheduled operational task — not infrastructure provisioning</td>
+                </tr>
+                <tr>
+                    <td>Ensure IIS is installed and running on 500 servers continuously</td>
+                    <td><span class="badge warning">DSC</span></td>
+                    <td>Continuous state enforcement — detects drift and remediates</td>
+                </tr>
+                <tr>
+                    <td>Quick one-off: list all VMs in a subscription</td>
+                    <td><span class="badge purple">Azure CLI</span></td>
+                    <td>Ad-hoc interactive query — imperative, immediate result</td>
+                </tr>
+                <tr>
+                    <td>New Azure IaC project — which format to use?</td>
+                    <td><span class="badge success">Bicep</span></td>
+                    <td>Microsoft-recommended for new Azure IaC. Less code, same power as ARM.</td>
+                </tr>
+                <tr>
+                    <td>Run a runbook against on-premises SQL servers</td>
+                    <td><span class="badge blue">Hybrid Runbook Worker</span></td>
+                    <td>On-premises resources, outbound-only connection to Azure on port 443</td>
+                </tr>
+                <tr>
+                    <td>Long-running patching job across 200 servers that must survive failures</td>
+                    <td><span class="badge warning">PS Workflow + Checkpoints</span></td>
+                    <td>Checkpoints allow resume from last save point — not restart from zero</td>
+                </tr>
+                <tr>
+                    <td>Store a database password needed by a runbook</td>
+                    <td><span class="badge error">Encrypted Variable</span></td>
+                    <td>Encrypted Automation variables — never hardcode credentials in runbook code</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#bc8cff"></div>Flash Cards — LP5 Review Questions</div>
+        <div class="panel-body">
+            <button class="reveal-all-btn" onclick="revealAll()">Reveal All Answers</button>
+            <div class="flash-grid">
+                <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                    <div class="q">Q1: What benefits do you achieve by modularising your infrastructure and configuration resources?</div>
+                    <div class="a">Consistency and reusability across deployments — each module has a single responsibility, can be independently tested, and reused across environments without duplication.</div>
+                    <div class="flash-hint">👆 Click to reveal</div>
+                </div>
+                <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                    <div class="q">Q2: What is the term for IaC that states what the final state should be without defining how to achieve it?</div>
+                    <div class="a">Declarative configuration.</div>
+                    <div class="flash-hint">👆 Click to reveal</div>
+                </div>
+                <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                    <div class="q">Q3: Which term defines the ability to apply one or more operations against a resource, resulting in the same outcome every time?</div>
+                    <div class="a">Idempotent.</div>
+                    <div class="flash-hint">👆 Click to reveal</div>
+                </div>
+                <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                    <div class="q">Q4: Which term defines the process whereby resources change state over time from how they were originally deployed?</div>
+                    <div class="a">Configuration drift.</div>
+                    <div class="flash-hint">👆 Click to reveal</div>
+                </div>
+                <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                    <div class="q">Q5: Which ARM deployment mode only deploys what's in the template and does not remove or modify other resources?</div>
+                    <div class="a">Incremental mode. (Complete mode removes anything NOT in the template.)</div>
+                    <div class="flash-hint">👆 Click to reveal</div>
+                </div>
+                <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                    <div class="q">Q6: How are dependencies defined in a Bicep file?</div>
+                    <div class="a">Explicitly with dependsOn, or implicitly — Bicep infers dependencies when you reference one resource's properties inside another resource declaration.</div>
+                    <div class="flash-hint">👆 Click to reveal</div>
+                </div>
+                <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                    <div class="q">Q7: A template contains a webAppName parameter. What is the benefit?</div>
+                    <div class="a">Parameters allow customisation at deploy time without changing the template itself. Pass different values per environment using a parameters file.</div>
+                    <div class="flash-hint">👆 Click to reveal</div>
+                </div>
+                <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                    <div class="q">Q8: How can you reuse a Bicep template in other Bicep templates?</div>
+                    <div class="a">Using the module keyword with a relative file path. Modules let you compose larger deployments from smaller, reusable Bicep files.</div>
+                    <div class="flash-hint">👆 Click to reveal</div>
+                </div>
+                <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                    <div class="q">Q9: What is the difference between Push and Pull mode in DSC?</div>
+                    <div class="a">Push = you actively push config to specific nodes (ad-hoc, small scale). Pull = nodes pull config from a pull server on a schedule (scalable, self-remediating, production).</div>
+                    <div class="flash-hint">👆 Click to reveal</div>
+                </div>
+                <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                    <div class="q">Q10: What does Azure Automation State Configuration provide that self-managed DSC doesn't?</div>
+                    <div class="a">A managed pull server in the cloud — no infrastructure to run yourself. Plus Log Analytics integration to query compliance status across your entire fleet.</div>
+                    <div class="flash-hint">👆 Click to reveal</div>
+                </div>
+                <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                    <div class="q">Q11: What port does the Hybrid Runbook Worker use, and in which direction?</div>
+                    <div class="a">TCP port 443, outbound only. The on-prem machine initiates to Azure. No inbound firewall rules needed.</div>
+                    <div class="flash-hint">👆 Click to reveal</div>
+                </div>
+                <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                    <div class="q">Q12: What are the three syntax differences between a PowerShell Workflow and a regular PS script?</div>
+                    <div class="a">(1) workflow keyword instead of function, (2) Param with capital P, (3) some PS commands behave differently inside workflow context.</div>
+                    <div class="flash-hint">👆 Click to reveal</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><div class="ph-dot" style="background:#3fb950"></div>LP5 Cheat Sheet — One-Liners</div>
+        <div class="panel-body">
+            <div class="two-col">
+                <div>
+                    <p class="section-label">Core Concepts</p>
+                    <ul>
+                        <li><strong>Declarative</strong> = describe what, not how → idempotent by design</li>
+                        <li><strong>Imperative</strong> = step-by-step instructions → may fail on re-run</li>
+                        <li><strong>Idempotent</strong> = run N times, same result every time</li>
+                        <li><strong>Immutable infra</strong> = don't patch, discard and redeploy</li>
+                        <li><strong>Snowflake server</strong> = unique, hand-built, irreproducible</li>
+                        <li><strong>Configuration drift</strong> = gap between desired and actual state</li>
+                        <li><strong>Incremental mode</strong> = add/update only, never delete</li>
+                        <li><strong>Complete mode</strong> = destructive, deletes unlisted resources</li>
+                    </ul>
+                </div>
+                <div>
+                    <p class="section-label">Tool Quick Reference</p>
+                    <ul>
+                        <li><strong>ARM</strong> = native Azure format, JSON, everything compiles to it</li>
+                        <li><strong>Bicep</strong> = DSL → transpiles to ARM, less code, same power</li>
+                        <li><strong>Azure CLI</strong> = imperative, ad-hoc, scripting, queries</li>
+                        <li><strong>Azure Automation</strong> = scheduled ops, runbooks, not provisioning</li>
+                        <li><strong>DSC</strong> = continuous state enforcement, detects + fixes drift</li>
+                        <li><strong>LCM</strong> = client engine on each DSC-managed node</li>
+                        <li><strong>MOF file</strong> = what DSC config compiles to, applied by LCM</li>
+                        <li><strong>nx prefix</strong> = Linux DSC resources (nxFile, nxService, nxPackage)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</div><!-- /container -->
+
+<script>
+function showTab(id) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.wf-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.target.classList.add('active');
+}
+function revealAll() {
+    document.querySelectorAll('.flash-card').forEach(c => c.classList.add('revealed'));
+}
+</script>
+</body>
+</html>
