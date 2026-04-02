@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LP6 · LP7 · LP8 — Security, Dependencies & Feedback | AZ-400</title>
+    <style>
+        :root{
+            --bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:#30363d;
+            --text:#e6edf3;--muted:#8b949e;
+            --green:#3fb950;--blue:#58a6ff;--red:#f85149;--yellow:#d29922;
+            --orange:#e3b341;--purple:#bc8cff;--pink:#f778ba;--teal:#39d353;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:var(--bg);color:var(--text);font-family:'Cascadia Code','Fira Code',monospace,system-ui;line-height:1.6;font-size:14px}
+        nav{position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;padding:10px 16px;z-index:100;overflow-x:auto;gap:10px}
+        .nav-logo{display:flex;align-items:center;gap:8px;font-weight:bold;font-size:14px;flex-shrink:0;white-space:nowrap}
+        .wf-tabs{display:flex;gap:4px;flex-wrap:wrap}
+        .wf-tab{background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 12px;cursor:pointer;border-radius:6px;font-family:inherit;transition:.2s;font-size:11px;white-space:nowrap}
+        .wf-tab:hover{color:var(--text);background:var(--surface2)}
+        .wf-tab.active{color:var(--blue);border-color:var(--blue);background:rgba(88,166,255,.1)}
+        .lp-divider{width:1px;height:24px;background:var(--border);margin:0 4px;flex-shrink:0}
+        .container{max-width:1200px;margin:0 auto;padding:20px}
+        .tab-content{display:none}
+        .tab-content.active{display:block}
+        .panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px}
+        .panel-header{background:var(--surface2);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:8px;font-weight:bold;font-size:13px}
+        .ph-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+        .panel-body{padding:16px}
+        .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+        .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+        .callout{background:var(--surface);border-left:4px solid var(--blue);padding:12px 16px;margin-bottom:12px;border-radius:4px;display:flex;gap:12px;align-items:flex-start;font-size:13px}
+        .callout.warn{border-left-color:var(--yellow)}
+        .callout.success{border-left-color:var(--green)}
+        .callout.danger{border-left-color:var(--red)}
+        .callout.tip{border-left-color:var(--purple)}
+        .callout.exam{border-left-color:var(--orange);background:rgba(227,179,65,.06)}
+        .ci{font-size:18px;flex-shrink:0}
+        .comparison-table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:12px}
+        .comparison-table th{background:var(--surface2);color:var(--text);padding:10px 12px;text-align:left;border:1px solid var(--border);font-weight:bold}
+        .comparison-table td{padding:10px 12px;border:1px solid var(--border);background:var(--surface)}
+        .comparison-table tr:nth-child(even) td{background:var(--surface2)}
+        .badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:bold;margin-right:4px;margin-bottom:2px}
+        .badge.success{background:rgba(63,185,80,.2);color:var(--green)}
+        .badge.warning{background:rgba(210,153,34,.2);color:var(--yellow)}
+        .badge.error{background:rgba(248,81,73,.2);color:var(--red)}
+        .badge.blue{background:rgba(88,166,255,.2);color:var(--blue)}
+        .badge.purple{background:rgba(188,140,255,.2);color:var(--purple)}
+        .badge.orange{background:rgba(227,179,65,.2);color:var(--orange)}
+        .badge.teal{background:rgba(57,211,83,.15);color:var(--teal)}
+        .code-block{background:var(--surface2);border:1px solid var(--border);padding:12px;border-radius:6px;overflow-x:auto;margin-bottom:12px;color:var(--blue);font-family:'Cascadia Code',monospace;font-size:12px;white-space:pre}
+        .terminal{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px}
+        .tbar{background:var(--surface2);border-bottom:1px solid var(--border);padding:8px 12px;display:flex;align-items:center;gap:6px}
+        .td{width:12px;height:12px;border-radius:50%}
+        .tlabel{margin-left:auto;font-size:11px;color:var(--muted)}
+        .tbody{padding:12px;font-family:'Cascadia Code',monospace;font-size:12px}
+        .tc{color:var(--green);margin-bottom:4px;white-space:pre-wrap}
+        .tc::before{content:"$ ";color:var(--green);font-weight:bold}
+        .to{color:var(--muted);margin-bottom:4px;white-space:pre-wrap}
+        .tok{color:var(--green);margin-bottom:4px}
+        .twarn{color:var(--yellow);margin-bottom:4px}
+        .do-dont{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+        .do-box{border-left:4px solid var(--green);background:var(--surface);padding:12px 16px;border-radius:4px}
+        .dont-box{border-left:4px solid var(--red);background:var(--surface);padding:12px 16px;border-radius:4px}
+        .do-box::before{content:"✓ DO: ";color:var(--green);font-weight:bold;display:block;margin-bottom:6px;font-size:12px}
+        .dont-box::before{content:"✗ DON'T: ";color:var(--red);font-weight:bold;display:block;margin-bottom:6px;font-size:12px}
+        .tool-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;transition:.2s}
+        .tool-card:hover{border-color:var(--blue);transform:translateY(-2px)}
+        .tool-card h3{color:var(--blue);margin-bottom:6px;font-size:13px}
+        .tool-card p{color:var(--muted);font-size:12px;line-height:1.5}
+        .section-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+        .flow-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+        .flow-box{background:var(--surface2);border:1px solid var(--border);padding:6px 12px;border-radius:6px;font-size:12px}
+        .flow-arrow{color:var(--muted);font-size:16px}
+        .key-term{color:var(--orange);font-weight:bold}
+        .highlight{color:var(--green)}
+        .subtle{color:var(--muted);font-size:12px}
+        .flash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:16px}
+        .flash-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;cursor:pointer;transition:.2s}
+        .flash-card:hover{border-color:var(--purple);transform:translateY(-2px)}
+        .flash-card .q{color:var(--blue);font-size:12px;margin-bottom:8px;font-weight:bold}
+        .flash-card .a{color:var(--green);font-size:12px;display:none}
+        .flash-card.revealed .a{display:block}
+        .flash-card.revealed .q{color:var(--muted)}
+        .flash-hint{color:var(--muted);font-size:11px;margin-top:6px}
+        .reveal-all-btn{background:rgba(188,140,255,.15);border:1px solid rgba(188,140,255,.3);color:var(--purple);padding:8px 16px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:bold;margin-bottom:16px}
+        .reveal-all-btn:hover{background:rgba(188,140,255,.25)}
+        button.wf-tab{display:inline-block}
+        h2{font-size:16px;color:var(--text);margin-bottom:12px}
+        h3{font-size:13px;color:var(--text);margin-bottom:8px}
+        p{font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.6}
+        li{font-size:13px;color:var(--muted);margin-left:16px;margin-bottom:4px;line-height:1.5}
+        ul{margin-bottom:10px}
+        .lp-banner{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;font-size:13px}
+        .lp-banner .lp-icon{font-size:22px}
+        .lp-banner .lp-title{font-weight:bold;color:var(--text);margin-bottom:2px}
+        .lp-banner .lp-sub{color:var(--muted);font-size:12px}
+        @media(max-width:700px){.two-col,.three-col,.do-dont{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="nav-logo">🔐 <span>LP6·7·8 — AZ-400</span></div>
+    <div class="wf-tabs">
+        <button class="wf-tab active" onclick="showTab('l6m01')">L6·M01 Secure DevOps</button>
+        <button class="wf-tab" onclick="showTab('l6m02')">L6·M02 Open Source</button>
+        <button class="wf-tab" onclick="showTab('l6m03')">L6·M03 SCA</button>
+        <button class="wf-tab" onclick="showTab('l6m04')">L6·M04 Governance</button>
+        <div class="lp-divider"></div>
+        <button class="wf-tab" onclick="showTab('l7m01')">L7·M01 Dependencies</button>
+        <button class="wf-tab" onclick="showTab('l7m02')">L7·M02 Pkg Mgmt</button>
+        <button class="wf-tab" onclick="showTab('l7m03')">L7·M03 Artifacts</button>
+        <button class="wf-tab" onclick="showTab('l7m04')">L7·M04 Versioning</button>
+        <button class="wf-tab" onclick="showTab('l7m05')">L7·M05 GH Packages</button>
+        <div class="lp-divider"></div>
+        <button class="wf-tab" onclick="showTab('l8m01')">L8·M01 Usage &amp; Flow</button>
+        <button class="wf-tab" onclick="showTab('l8m02')">L8·M02 Dashboards</button>
+        <button class="wf-tab" onclick="showTab('l8m03')">L8·M03 Knowledge</button>
+        <button class="wf-tab" onclick="showTab('l8m04')">L8·M04 Analytics</button>
+        <button class="wf-tab" onclick="showTab('l8m05')">L8·M05 Alerts</button>
+        <div class="lp-divider"></div>
+        <button class="wf-tab" onclick="showTab('exam')">🎯 Exam Tips</button>
+    </div>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════
+     LP6 M01 — Introduction to Secure DevOps
+═══════════════════════════════════════════ -->
+<div id="l6m01" class="tab-content active">
+<div class="lp-banner">
+    <span class="lp-icon">🔐</span>
+    <div>
+        <div class="lp-title">LP6 — Implement Security and Validate Code Bases for Compliance</div>
+        <div class="lp-sub">Module 1: Introduction to Secure DevOps</div>
+    </div>
+</div>
+
+<div class="callout exam"><span class="ci">🎯</span><div><strong>EXAM WEIGHT:</strong> Security &amp; Compliance = <span class="key-term">16%</span> of the AZ-400 exam. Every module in LP6 is fair game. Know the tools, know the cost-of-defect model, know what CodeQL does vs Dependabot vs Policy.</div></div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--red)"></span> What is DevSecOps?</div>
+    <div class="panel-body">
+        <p><span class="key-term">DevSecOps</span> = DevOps + Security baked in from day one — not bolted on at the end.</p>
+        <ul>
+            <li>Security is a <strong>shared responsibility</strong> across Dev, Ops, and Security teams</li>
+            <li>Shift-left = find vulnerabilities <strong>earlier</strong> in the SDLC when they're cheaper to fix</li>
+            <li>Automate security checks in CI/CD pipelines</li>
+            <li>Continuous compliance monitoring, not periodic audits</li>
+        </ul>
+        <div class="callout exam"><span class="ci">🎯</span><div>The <span class="key-term">cost-of-defect model</span>: fixing a bug costs <strong>$80</strong> in design, <strong>$240</strong> in coding, <strong>$960</strong> in testing, <strong>$7,600</strong> in production. This is the business case for shift-left.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> Threat Modeling — 5 Steps</div>
+    <div class="panel-body">
+        <div class="flow-row"><div class="flow-box" style="border-color:var(--blue)">1. Identify Assets</div><div class="flow-arrow">→</div><div class="flow-box">2. Create Architecture Overview</div></div>
+        <div class="flow-row"><div class="flow-box">3. Decompose the App</div><div class="flow-arrow">→</div><div class="flow-box" style="border-color:var(--red)">4. Identify Threats</div></div>
+        <div class="flow-row"><div class="flow-box" style="border-color:var(--green)">5. Document &amp; Rate Threats</div></div>
+        <div class="callout warn" style="margin-top:8px"><span class="ci">⚠️</span><div>Use <span class="key-term">STRIDE</span> framework: Spoofing, Tampering, Repudiation, Info Disclosure, DoS, Elevation of Privilege</div></div>
+        <p style="margin-top:8px"><span class="highlight">Microsoft Threat Modeling Tool</span> — free tool, generates data flow diagrams (DFDs) and auto-identifies threats</p>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> Security in the Pipeline — Where Does It Fit?</div>
+    <div class="panel-body">
+        <div class="flow-row">
+            <div class="flow-box" style="border-color:var(--purple)">Plan<br><span class="subtle">Threat modeling</span></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box" style="border-color:var(--blue)">Code<br><span class="subtle">SAST / CodeQL</span></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box" style="border-color:var(--orange)">Build<br><span class="subtle">SCA / Dependabot</span></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box" style="border-color:var(--yellow)">Test<br><span class="subtle">DAST / pen test</span></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box" style="border-color:var(--red)">Release<br><span class="subtle">Secrets scanning</span></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box" style="border-color:var(--green)">Monitor<br><span class="subtle">Defender / SIEM</span></div>
+        </div>
+        <div class="three-col" style="margin-top:12px">
+            <div class="tool-card">
+                <h3>🔍 SAST</h3>
+                <p>Static Application Security Testing — analyzes <strong>source code</strong> without running it. CodeQL, SonarQube. Catches logic flaws, injection risks.</p>
+            </div>
+            <div class="tool-card">
+                <h3>🌐 DAST</h3>
+                <p>Dynamic Application Security Testing — tests a <strong>running app</strong>. OWASP ZAP. Finds runtime vulnerabilities like XSS, SQL injection.</p>
+            </div>
+            <div class="tool-card">
+                <h3>📦 SCA</h3>
+                <p>Software Composition Analysis — scans <strong>third-party dependencies</strong> for known CVEs. Dependabot, WhiteSource, Mend.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> Azure Key Vault in DevOps</div>
+    <div class="panel-body">
+        <p>Never store secrets in code or YAML files. Fetch from <span class="key-term">Azure Key Vault</span> at pipeline runtime.</p>
+        <div class="callout success"><span class="ci">✅</span><div>Pipeline retrieves secret → injects as masked env variable → never logged or exposed in output</div></div>
+        <ul>
+            <li><strong>Key Vault task</strong>: Azure Pipelines native integration</li>
+            <li><strong>Variable Groups</strong>: link to Key Vault, sync secrets automatically</li>
+            <li><strong>Managed Identity</strong>: pipeline authenticates without storing credentials</li>
+        </ul>
+        <div class="callout exam"><span class="ci">🎯</span><div>Exam loves: <em>"Where should connection strings be stored in a pipeline?"</em> → Azure Key Vault linked to a variable group.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--purple)"></span> Security Scanning in GitHub</div>
+    <div class="panel-body">
+        <p><span class="key-term">GitHub Advanced Security (GHAS)</span> — available on GitHub Enterprise and Azure DevOps Advanced Security:</p>
+        <ul>
+            <li>🔍 <strong>Code scanning</strong> (CodeQL) — SAST built into pull request checks</li>
+            <li>🔑 <strong>Secret scanning</strong> — detects committed credentials, API keys, tokens</li>
+            <li>📦 <strong>Dependency review</strong> — shows vulnerable packages in PRs</li>
+            <li>🤖 <strong>Dependabot alerts</strong> — auto PRs to update vulnerable deps</li>
+        </ul>
+        <div class="callout warn"><span class="ci">⚠️</span><div>GHAS features are available in <strong>both GitHub.com and Azure DevOps</strong> — the exam tests both environments.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--yellow)"></span> Flash Cards — LP6 M01</div>
+    <div class="panel-body">
+        <button class="reveal-all-btn" onclick="revealAll('fc-l6m01')">Reveal All Answers</button>
+        <div class="flash-grid" id="fc-l6m01">
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What does "shift-left security" mean?</div>
+                <div class="a">Moving security checks earlier in the SDLC — into design and coding phases — to find and fix vulnerabilities when they're cheapest to address.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What are the 5 steps of threat modeling?</div>
+                <div class="a">1. Identify Assets, 2. Create Architecture Overview, 3. Decompose the App, 4. Identify Threats (STRIDE), 5. Document and Rate Threats.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">SAST vs DAST — what's the key difference?</div>
+                <div class="a">SAST = analyzes source code statically (not running). DAST = tests a live running application. SAST = shift-left. DAST = shift-right toward testing.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Cost of fixing a production bug vs design-phase bug?</div>
+                <div class="a">Production: ~$7,600. Design: ~$80. Ratio is 95:1 — the core business case for DevSecOps and shift-left security.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     LP6 M02 — Open-Source Software
+═══════════════════════════════════════════ -->
+<div id="l6m02" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">📦</span>
+    <div>
+        <div class="lp-title">LP6 — Implement Security and Validate Code Bases for Compliance</div>
+        <div class="lp-sub">Module 2: Implement Open-Source Software</div>
+    </div>
+</div>
+
+<div class="callout exam"><span class="ci">🎯</span><div><strong>EXAM FOCUS:</strong> Know the three license tiers and which licenses belong to each. Know <strong>GPL vs AGPL vs MIT vs Apache</strong> by name. Know what "copyleft" means and when it creates a legal problem.</div></div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> OSS License Tiers</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Tier</th><th>Examples</th><th>Rules</th><th>Risk</th></tr>
+            <tr><td><span class="badge success">Permissive</span></td><td>MIT, Apache 2.0, BSD</td><td>Use freely, attribution required</td><td><span class="badge success">Low</span></td></tr>
+            <tr><td><span class="badge warning">Downstream Copyleft</span></td><td>LGPL, MPL</td><td>Modified library files must be OSS; your app code can stay closed</td><td><span class="badge warning">Med</span></td></tr>
+            <tr><td><span class="badge error">Strong Copyleft</span></td><td>GPL, AGPL</td><td>Any derivative work must also be open source</td><td><span class="badge error">High</span></td></tr>
+        </table>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>AGPL extends GPL to network use</strong> — if you run AGPL software as a service (SaaS), users who interact with it over the network have the right to the source. This is the "network copyleft" trap.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> OSS Risk Management</div>
+    <div class="panel-body">
+        <p>Why enterprises care about OSS licenses:</p>
+        <ul>
+            <li>Using GPL library in a commercial product → must open-source your product</li>
+            <li>License violations = legal liability, IP exposure</li>
+            <li>Abandoned packages = unpatched CVEs forever</li>
+        </ul>
+        <div class="callout tip"><span class="ci">💡</span><div><strong>Enterprise approach:</strong> Maintain an approved OSS package list. Block unapproved packages via Azure Artifacts upstream source policies or FOSSA/WhiteSource scans.</div></div>
+        <div class="do-dont">
+            <div class="do-box">Use MIT or Apache 2.0 for commercial projects. Both are safe for proprietary products.</div>
+            <div class="dont-box">Ship a GPL library inside a closed-source commercial app without legal review. You may be legally required to open-source the whole product.</div>
+        </div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> Tracking OSS Inventory</div>
+    <div class="panel-body">
+        <div class="three-col">
+            <div class="tool-card">
+                <h3>📋 Software Bill of Materials (SBOM)</h3>
+                <p>Complete inventory of all OSS components in your application, their versions, and licenses. Required by many enterprise and government contracts.</p>
+            </div>
+            <div class="tool-card">
+                <h3>🔍 FOSSA / Mend (WhiteSource)</h3>
+                <p>Commercial SCA tools that scan codebases, map licenses, flag policy violations, and generate SBOMs automatically in CI/CD.</p>
+            </div>
+            <div class="tool-card">
+                <h3>⚡ GitHub Dependency Graph</h3>
+                <p>Built-in GitHub feature that parses package manifests (package.json, pom.xml, requirements.txt) and maps all direct + transitive dependencies.</p>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     LP6 M03 — Software Composition Analysis
+═══════════════════════════════════════════ -->
+<div id="l6m03" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🧬</span>
+    <div>
+        <div class="lp-title">LP6 — Implement Security and Validate Code Bases for Compliance</div>
+        <div class="lp-sub">Module 3: Software Composition Analysis</div>
+    </div>
+</div>
+
+<div class="callout exam"><span class="ci">🎯</span><div><strong>EXAM FOCUS:</strong> Know CodeQL as a SAST tool and how it integrates into GitHub Actions. Know Dependabot's 4-step workflow. Know CVSS scoring and what "severity" means for remediation priority.</div></div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--purple)"></span> CodeQL — Code as a Database</div>
+    <div class="panel-body">
+        <p><span class="key-term">CodeQL</span> treats your source code as a queryable database. Write queries to find vulnerability patterns across the entire codebase.</p>
+        <ul>
+            <li>Supports: C/C++, C#, Java, JavaScript/TypeScript, Python, Go, Ruby</li>
+            <li>Finds: SQL injection, XSS, path traversal, deserialization flaws</li>
+            <li>Integrated into GitHub Advanced Security as <strong>code scanning</strong></li>
+            <li>Runs on <strong>every pull request</strong> — blocks merge if critical issues found</li>
+        </ul>
+        <div class="callout exam"><span class="ci">🎯</span><div>The exam phrase: <em>"CodeQL treats source code as a queryable database"</em> — this exact framing shows up in questions. CodeQL ≠ runtime scanner. It's static analysis.</div></div>
+        <div class="code-block">name: CodeQL Analysis
+on: [push, pull_request]
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+      - uses: github/codeql-action/analyze@v3</div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> Dependabot — 4-Step Workflow</div>
+    <div class="panel-body">
+        <div class="flow-row"><div class="flow-box" style="border-color:var(--blue)">1. Scan</div><div class="flow-arrow">→</div><div class="flow-box">Reads dependency manifests</div></div>
+        <div class="flow-row"><div class="flow-box" style="border-color:var(--yellow)">2. Alert</div><div class="flow-arrow">→</div><div class="flow-box">Notifies of vulnerable packages</div></div>
+        <div class="flow-row"><div class="flow-box" style="border-color:var(--orange)">3. PR</div><div class="flow-arrow">→</div><div class="flow-box">Auto-creates version-bump PRs</div></div>
+        <div class="flow-row"><div class="flow-box" style="border-color:var(--green)">4. Merge</div><div class="flow-arrow">→</div><div class="flow-box">Tests pass → merge = patched</div></div>
+        <div class="callout tip" style="margin-top:8px"><span class="ci">💡</span><div>Dependabot also does <strong>version updates</strong> (keep deps current) separate from <strong>security updates</strong> (fix CVEs). Configure via <code>dependabot.yml</code> in <code>.github/</code>.</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div>Dependabot is <strong>reactive</strong> — it responds to known CVEs. CodeQL is <strong>proactive</strong> — it finds logic flaws not yet in any CVE database.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--red)"></span> CVSS — Vulnerability Scoring</div>
+    <div class="panel-body">
+        <p><span class="key-term">CVSS</span> (Common Vulnerability Scoring System) — industry standard 0-10 scale:</p>
+        <table class="comparison-table">
+            <tr><th>Score</th><th>Severity</th><th>Action</th></tr>
+            <tr><td>9.0 – 10.0</td><td><span class="badge error">Critical</span></td><td>Patch immediately / emergency change</td></tr>
+            <tr><td>7.0 – 8.9</td><td><span class="badge error">High</span></td><td>Patch within 7 days</td></tr>
+            <tr><td>4.0 – 6.9</td><td><span class="badge warning">Medium</span></td><td>Patch within 30 days</td></tr>
+            <tr><td>0.1 – 3.9</td><td><span class="badge success">Low</span></td><td>Patch in next release cycle</td></tr>
+        </table>
+        <div class="callout warn"><span class="ci">⚠️</span><div>CVSS base score doesn't account for your environment. A Critical CVE in a library you don't use is effectively zero risk. Use <strong>exploitability</strong> + <strong>asset criticality</strong> to prioritize.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> Security Bug Bar</div>
+    <div class="panel-body">
+        <p>A <span class="key-term">security bug bar</span> defines the minimum severity threshold that blocks a release:</p>
+        <ul>
+            <li>E.g.: "No Critical or High CVEs may ship to production"</li>
+            <li>Enforced via pipeline gates — fail the build if thresholds exceeded</li>
+            <li>Used with CVSS scores from SCA and SAST tools</li>
+            <li>Different bars per environment (dev/staging/prod)</li>
+        </ul>
+        <div class="callout exam"><span class="ci">🎯</span><div>The <strong>security bug bar</strong> is how organizations operationalize "zero Critical vulns in prod" — it's a policy enforced in the pipeline, not a manual review process.</div></div>
+        <div class="callout tip"><span class="ci">💡</span><div>Real world: Teams create exceptions/waivers for accepted risk with business owner sign-off. The bug bar is the default; exceptions prove the rule.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--yellow)"></span> Flash Cards — LP6 M03</div>
+    <div class="panel-body">
+        <button class="reveal-all-btn" onclick="revealAll('fc-l6m03')">Reveal All Answers</button>
+        <div class="flash-grid" id="fc-l6m03">
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What is CodeQL and what makes it unique?</div>
+                <div class="a">CodeQL treats source code as a queryable database. You write QL queries to find vulnerability patterns. It's SAST — static analysis — not runtime scanning.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Name Dependabot's 4 steps.</div>
+                <div class="a">1. Scan dependency manifests → 2. Alert on vulnerable packages → 3. Create version-bump PR → 4. Merge after tests pass = patched.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What CVSS score is "Critical"?</div>
+                <div class="a">9.0–10.0. High = 7.0–8.9. Medium = 4.0–6.9. Low = 0.1–3.9.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">CodeQL vs Dependabot — what does each catch?</div>
+                <div class="a">CodeQL = logic flaws in YOUR code (SAST). Dependabot = known CVEs in THIRD-PARTY dependencies (SCA). Different tools, different targets.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     LP6 M04 — Security Monitoring & Governance
+═══════════════════════════════════════════ -->
+<div id="l6m04" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🛡️</span>
+    <div>
+        <div class="lp-title">LP6 — Implement Security and Validate Code Bases for Compliance</div>
+        <div class="lp-sub">Module 4: Security Monitoring and Governance</div>
+    </div>
+</div>
+
+<div class="callout exam"><span class="ci">🎯</span><div><strong>EXAM FOCUS:</strong> Azure Policy = condition + effect. Know the difference between initiatives and individual policies. Know resource locks (CanNotDelete vs ReadOnly) and that they <strong>override RBAC</strong>. Know Defender for Identity's 3 components.</div></div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> Azure Policy</div>
+    <div class="panel-body">
+        <p><span class="key-term">Azure Policy</span> enforces organizational standards and assesses compliance at scale.</p>
+        <ul>
+            <li>A <strong>policy rule</strong> = <strong>condition</strong> (if) + <strong>effect</strong> (then)</li>
+            <li>Assigned to management groups, subscriptions, or resource groups</li>
+            <li>Evaluated continuously — not just at creation time</li>
+        </ul>
+        <table class="comparison-table">
+            <tr><th>Effect</th><th>What Happens</th></tr>
+            <tr><td><span class="badge blue">Deny</span></td><td>Block the resource from being created/modified</td></tr>
+            <tr><td><span class="badge warning">Audit</span></td><td>Allow but log non-compliant resources</td></tr>
+            <tr><td><span class="badge success">DeployIfNotExists</span></td><td>Auto-deploy a related resource if missing</td></tr>
+            <tr><td><span class="badge purple">Append</span></td><td>Add additional fields to the resource request</td></tr>
+            <tr><td><span class="badge teal">Modify</span></td><td>Add/replace/remove properties during create/update</td></tr>
+        </table>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Initiative</strong> = a collection of policies grouped together for a compliance goal (e.g., "PCI-DSS" initiative bundles 50 individual policies). Assign one initiative instead of 50 policies.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--red)"></span> Resource Locks</div>
+    <div class="panel-body">
+        <p><span class="key-term">Resource Locks</span> prevent accidental deletion or modification — even by admins with full RBAC permissions.</p>
+        <table class="comparison-table">
+            <tr><th>Lock Type</th><th>Effect</th></tr>
+            <tr><td><span class="badge error">CanNotDelete</span></td><td>Read and modify allowed. Delete blocked.</td></tr>
+            <tr><td><span class="badge warning">ReadOnly</span></td><td>Only reads allowed. Modify AND delete blocked.</td></tr>
+        </table>
+        <div class="callout danger"><span class="ci">🚨</span><div><strong>Locks override RBAC.</strong> Even an Owner-role user cannot delete a locked resource without first removing the lock. Locks live at resource, resource group, or subscription scope and <strong>inherit downward</strong>.</div></div>
+        <div class="callout tip"><span class="ci">💡</span><div>Real world: Apply <strong>CanNotDelete</strong> to production Key Vaults and storage accounts. Prevents "oops I deleted prod" incidents that have ended careers.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--purple)"></span> Microsoft Defender for DevOps</div>
+    <div class="panel-body">
+        <p>Unified security management across GitHub and Azure DevOps pipelines.</p>
+        <ul>
+            <li>Connects to GitHub repos and Azure DevOps projects via connector</li>
+            <li>Surfaces security findings (code, secrets, IaC misconfigs) in <strong>Microsoft Defender for Cloud</strong></li>
+            <li>Provides <strong>DevOps security posture</strong> dashboard</li>
+        </ul>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Defender for Identity</strong> — 3 components: <span class="key-term">Sensor</span> (installed on DCs), <span class="key-term">Cloud Service</span> (Azure-hosted), <span class="key-term">Management Console</span> (portal UI). Detects lateral movement, pass-the-hash, golden ticket attacks.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> GitHub Advanced Security in Azure DevOps</div>
+    <div class="panel-body">
+        <p><span class="key-term">Microsoft Security DevOps (MSDO)</span> extension — runs in Azure Pipelines:</p>
+        <ul>
+            <li>Integrates: Bandit, BinSkim, ESlint, TemplateAnalyzer, Terrascan, Trivy</li>
+            <li>Results published to <strong>SARIF format</strong> → surfaced in Azure DevOps Security tab</li>
+            <li>GitHub Advanced Security for Azure DevOps = secret scanning + code scanning + dependency scanning</li>
+        </ul>
+        <div class="callout exam"><span class="ci">🎯</span><div>GHAS features in <strong>both</strong> GitHub.com and Azure DevOps: secret scanning, code scanning (CodeQL), dependency review. The exam tests whether you know both platforms have them.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--yellow)"></span> Flash Cards — LP6 M04</div>
+    <div class="panel-body">
+        <button class="reveal-all-btn" onclick="revealAll('fc-l6m04')">Reveal All Answers</button>
+        <div class="flash-grid" id="fc-l6m04">
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What is the structure of an Azure Policy rule?</div>
+                <div class="a">Condition (if) + Effect (then). Example: if region != eastus, then Deny. Assigned at management group / subscription / RG scope.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Azure Policy Initiative vs individual policy?</div>
+                <div class="a">Initiative = a collection of policies grouped for a compliance goal. Assign one initiative instead of many individual policies. e.g., ISO 27001 initiative bundles multiple policies.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">CanNotDelete lock vs ReadOnly lock?</div>
+                <div class="a">CanNotDelete = read + modify OK, delete blocked. ReadOnly = ONLY reads allowed, modify and delete blocked. Both override RBAC — even Owners are blocked.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Name the 3 components of Defender for Identity.</div>
+                <div class="a">1. Sensor (on Domain Controllers), 2. Cloud Service (Azure-hosted analysis), 3. Management Console (portal UI for alerts and investigations).</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     LP7 M01 — Explore Package Dependencies
+═══════════════════════════════════════════ -->
+<div id="l7m01" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">📦</span>
+    <div>
+        <div class="lp-title">LP7 — Design and Implement a Dependency Management Strategy</div>
+        <div class="lp-sub">Module 1: Explore Package Dependencies</div>
+    </div>
+</div>
+
+<div class="callout exam"><span class="ci">🎯</span><div><strong>EXAM WEIGHT:</strong> LP7 topics appear in pipeline and build questions. Know <strong>Azure Artifacts feeds</strong> deeply — feeds, upstream sources, views, and package types are all exam targets.</div></div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> What Are Package Dependencies?</div>
+    <div class="panel-body">
+        <p>Modern apps don't build from scratch — they assemble from packages. Understanding the dependency graph is critical for security, compliance, and build stability.</p>
+        <ul>
+            <li><strong>Direct dependency</strong>: explicitly declared in your manifest (package.json, .csproj, pom.xml)</li>
+            <li><strong>Transitive dependency</strong>: a dependency of your dependency — not declared, but pulled in</li>
+            <li><strong>Dependency hell</strong>: conflicting version requirements across the tree</li>
+        </ul>
+        <div class="callout warn"><span class="ci">⚠️</span><div><strong>Transitive vulnerabilities</strong> are the hardest to catch. A critical CVE in a deep transitive dep won't show up in your manifest — that's why SCA tools parse the full dependency tree.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> Package Manifest Files</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Ecosystem</th><th>Manifest File</th><th>Lock File</th></tr>
+            <tr><td><span class="badge blue">Node.js / npm</span></td><td>package.json</td><td>package-lock.json</td></tr>
+            <tr><td><span class="badge purple">.NET / NuGet</span></td><td>.csproj / packages.config</td><td>packages.lock.json</td></tr>
+            <tr><td><span class="badge orange">Java / Maven</span></td><td>pom.xml</td><td>—</td></tr>
+            <tr><td><span class="badge success">Python / pip</span></td><td>requirements.txt</td><td>Pipfile.lock</td></tr>
+            <tr><td><span class="badge teal">Java / Gradle</span></td><td>build.gradle</td><td>gradle.lockfile</td></tr>
+        </table>
+        <div class="callout tip"><span class="ci">💡</span><div><strong>Lock files</strong> pin exact transitive versions for reproducible builds. Always commit lock files to source control for application repos. Libraries should NOT commit lock files — let consumers resolve.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> Dependency Management Best Practices</div>
+    <div class="panel-body">
+        <div class="do-dont">
+            <div class="do-box">Use version ranges (e.g., ^1.2.0) in library manifests — let consumers pin their own versions.</div>
+            <div class="dont-box">Use wildcards (*) in production app manifests — unpredictable builds, security risk from auto-updating to malicious versions.</div>
+        </div>
+        <div class="do-dont">
+            <div class="do-box">Use upstream sources in Azure Artifacts to cache public packages — ensures availability even if npm registry goes down.</div>
+            <div class="dont-box">Pull directly from public registries in CI/CD — if the registry is unavailable or a package is yanked, your pipeline breaks.</div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     LP7 M02 — Understand Package Management
+═══════════════════════════════════════════ -->
+<div id="l7m02" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🗃️</span>
+    <div>
+        <div class="lp-title">LP7 — Design and Implement a Dependency Management Strategy</div>
+        <div class="lp-sub">Module 2: Understand Package Management</div>
+    </div>
+</div>
+
+<div class="callout exam"><span class="ci">🎯</span><div><strong>EXAM FOCUS:</strong> Azure Artifacts = universal package registry. Know: feed, upstream source, views (@local/@prerelease/@release), and all 5 supported package types. Org-scoped vs project-scoped feeds.</div></div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> Azure Artifacts — Core Concepts</div>
+    <div class="panel-body">
+        <p><span class="key-term">Azure Artifacts</span> = a universal artifact repository hosted in Azure DevOps. One place for all package types.</p>
+        <ul>
+            <li><strong>Feed</strong>: a container that holds packages. You configure permissions and upstream sources per feed.</li>
+            <li><strong>Org-scoped feed</strong>: visible to all projects in the org</li>
+            <li><strong>Project-scoped feed</strong>: visible only within the project</li>
+            <li><strong>Upstream source</strong>: a feed can proxy packages from public registries (npmjs.com, nuget.org, PyPI)</li>
+        </ul>
+        <div class="callout exam"><span class="ci">🎯</span><div>When a feed has an upstream source configured, requesting a package that isn't in the feed will <strong>pull it from upstream and cache a copy</strong>. Future requests hit the cache — no internet dependency.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--purple)"></span> Supported Package Types</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Package Type</th><th>Ecosystem</th><th>File Extension</th></tr>
+            <tr><td><span class="badge blue">NuGet</span></td><td>.NET, C#</td><td>.nupkg</td></tr>
+            <tr><td><span class="badge success">npm</span></td><td>JavaScript, Node.js</td><td>.tgz</td></tr>
+            <tr><td><span class="badge orange">Maven</span></td><td>Java</td><td>.jar, .war</td></tr>
+            <tr><td><span class="badge warning">PyPI</span></td><td>Python</td><td>.whl, .tar.gz</td></tr>
+            <tr><td><span class="badge purple">Universal Packages</span></td><td>Any binary / file</td><td>Any</td></tr>
+        </table>
+        <div class="callout tip"><span class="ci">💡</span><div><strong>Universal Packages</strong> = the catch-all. Drop any file (scripts, models, executables) into Azure Artifacts when no standard package format fits.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> Feed Views — Promotion Pipeline</div>
+    <div class="panel-body">
+        <p>Views are a way to promote packages through quality gates without copying them:</p>
+        <div class="flow-row">
+            <div class="flow-box" style="border-color:var(--muted)">Publish<br><span class="subtle">@local view</span></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box" style="border-color:var(--yellow)">Pre-release testing<br><span class="subtle">@prerelease view</span></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box" style="border-color:var(--green)">Production ready<br><span class="subtle">@release view</span></div>
+        </div>
+        <ul style="margin-top:12px">
+            <li><span class="key-term">@local</span> — all packages published to this feed, including all versions</li>
+            <li><span class="key-term">@prerelease</span> — packages promoted for integration/QA testing</li>
+            <li><span class="key-term">@release</span> — production-approved packages only</li>
+        </ul>
+        <div class="callout exam"><span class="ci">🎯</span><div>Consumers pin to <strong>@release</strong> view in their package source config — they only ever get promoted, approved versions. The package isn't copied; the view is a <strong>pointer</strong> to the promoted version in @local.</div></div>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--yellow)"></span> Flash Cards — LP7 M01 &amp; M02</div>
+    <div class="panel-body">
+        <button class="reveal-all-btn" onclick="revealAll('fc-l7m12')">Reveal All Answers</button>
+        <div class="flash-grid" id="fc-l7m12">
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What is an Azure Artifacts feed?</div>
+                <div class="a">A container that holds packages in Azure Artifacts. Feeds have permissions, upstream sources, and views. Can be org-scoped or project-scoped.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What happens when you request a package from a feed with an upstream source?</div>
+                <div class="a">If not in the feed, it's pulled from the upstream registry (e.g., npmjs.com), cached in the feed, and returned. Future requests hit the cache — no internet needed.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Name the 5 package types supported by Azure Artifacts.</div>
+                <div class="a">NuGet (.NET), npm (JavaScript), Maven (Java), PyPI (Python), Universal Packages (any binary/file).</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What are the 3 feed views and what does each represent?</div>
+                <div class="a">@local = all published packages. @prerelease = promoted for testing. @release = approved for production. Views are pointers, not copies.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     LP7 M03 — Migrate, Consolidate and Secure Artifacts
+═══════════════════════════════════════════ -->
+<div id="l7m03" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🔒</span>
+    <div>
+        <div class="lp-title">LP7 — Design and Implement a Dependency Management Strategy</div>
+        <div class="lp-sub">Module 3: Migrate, Consolidate and Secure Artifacts</div>
+    </div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> Why Consolidate Artifact Stores?</div>
+    <div class="panel-body">
+        <p>Many orgs have packages scattered across: NuGet feeds, local file shares, Artifactory instances, Jenkins build outputs. Consolidating to Azure Artifacts gives:</p>
+        <ul>
+            <li>Single source of truth for all packages</li>
+            <li>Uniform access control (Azure AD / RBAC)</li>
+            <li>Audit trail for every package download/publish</li>
+            <li>Retention policies to clean up old versions</li>
+            <li>Upstream sources to replace fragmented external feeds</li>
+        </ul>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--red)"></span> Securing Artifacts</div>
+    <div class="panel-body">
+        <p>Package security layers in Azure Artifacts:</p>
+        <ul>
+            <li><strong>Feed permissions</strong>: Owner, Contributor, Collaborator, Reader roles</li>
+            <li><strong>Package immutability</strong>: once published, a version cannot be overwritten — prevents tampering</li>
+            <li><strong>Delete vs Unlist</strong>: delete removes from feed entirely; unlist hides from search but still installable with exact version</li>
+            <li><strong>Upstream blocking</strong>: disable upstream sources to prevent packages from public registries reaching dev environments</li>
+        </ul>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Delete vs Unlist:</strong> Unlist = hides from browse/search but version is still installable if you specify it exactly. Delete = permanently gone. Use Unlist to deprecate; Delete only when appropriate.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> Artifact Retention Policies</div>
+    <div class="panel-body">
+        <div class="two-col">
+            <div>
+                <p>Retention policies automatically clean up old pipeline artifacts and package versions:</p>
+                <ul>
+                    <li>Set max versions to retain per package</li>
+                    <li>Configure days to retain pipeline runs</li>
+                    <li>Protects storage costs — old builds accumulate fast</li>
+                    <li>Minimum retention = 1 version (can never auto-delete all)</li>
+                </ul>
+            </div>
+            <div class="callout warn"><span class="ci">⚠️</span><div><strong>Retention policy trap:</strong> If a build artifact is associated with a release that hasn't been deleted, the retention policy will NOT delete that artifact — releases protect their artifacts. You must delete the release first.</div></div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     LP7 M04 — Implement a Versioning Strategy
+═══════════════════════════════════════════ -->
+<div id="l7m04" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🏷️</span>
+    <div>
+        <div class="lp-title">LP7 — Design and Implement a Dependency Management Strategy</div>
+        <div class="lp-sub">Module 4: Implement a Versioning Strategy</div>
+    </div>
+</div>
+
+<div class="callout exam"><span class="ci">🎯</span><div><strong>EXAM FOCUS:</strong> Semantic Versioning (SemVer) — know exactly what each number means. Know pre-release identifiers. Know how versioning integrates with feed views in Azure Artifacts.</div></div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> Semantic Versioning (SemVer)</div>
+    <div class="panel-body">
+        <p>Format: <span class="key-term">MAJOR.MINOR.PATCH</span></p>
+        <table class="comparison-table">
+            <tr><th>Component</th><th>When to Increment</th><th>Example</th></tr>
+            <tr><td><span class="badge error">MAJOR</span></td><td>Breaking change — consumers must update code</td><td>2.0.0</td></tr>
+            <tr><td><span class="badge warning">MINOR</span></td><td>New backward-compatible feature added</td><td>1.3.0</td></tr>
+            <tr><td><span class="badge success">PATCH</span></td><td>Backward-compatible bug fix only</td><td>1.2.7</td></tr>
+        </table>
+        <p>Pre-release identifiers: <code>1.0.0-alpha</code> → <code>1.0.0-beta</code> → <code>1.0.0-rc.1</code> → <code>1.0.0</code></p>
+        <div class="callout exam"><span class="ci">🎯</span><div>Version <strong>0.x.x</strong> = initial development, anything may change. Version <strong>1.0.0</strong> = public API declared stable. Starting at 0 is intentional — no stability guarantees.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> Versioning Strategies for Pipelines</div>
+    <div class="panel-body">
+        <ul>
+            <li><strong>Date-based</strong>: 2024.04.03.1 — easy to understand, no semantic meaning</li>
+            <li><strong>GitVersion</strong>: auto-calculates SemVer from git history and branch names</li>
+            <li><strong>Build counter</strong>: append pipeline run number — $(Build.BuildNumber)</li>
+            <li><strong>Commit SHA</strong>: short SHA for traceability (not SemVer)</li>
+        </ul>
+        <div class="callout tip"><span class="ci">💡</span><div>In real projects: use <strong>GitVersion</strong> for library packages (proper SemVer), use <strong>date + build counter</strong> for deployment artifacts. Libraries need semantic meaning; deployments need traceability.</div></div>
+        <div class="code-block"># GitVersion task in Azure Pipelines
+- task: GitVersion@5
+  inputs:
+    versionSpec: '5.x'
+# Version available as $(GitVersion.SemVer)</div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--yellow)"></span> Flash Cards — LP7 M03 &amp; M04</div>
+    <div class="panel-body">
+        <button class="reveal-all-btn" onclick="revealAll('fc-l7m34')">Reveal All Answers</button>
+        <div class="flash-grid" id="fc-l7m34">
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">SemVer: when do you increment MAJOR vs MINOR vs PATCH?</div>
+                <div class="a">MAJOR = breaking change. MINOR = new backward-compatible feature. PATCH = bug fix only. 2.0.0 vs 1.3.0 vs 1.2.7.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Delete vs Unlist in Azure Artifacts?</div>
+                <div class="a">Unlist = hides from search/browse but still installable with exact version. Delete = permanently removed from feed. Use Unlist to deprecate gracefully.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What does package immutability mean in Azure Artifacts?</div>
+                <div class="a">Once a package version is published, it cannot be overwritten or modified. This prevents supply chain attacks where a bad actor replaces a legitimate package version.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     LP7 M05 — Introduction to GitHub Packages
+═══════════════════════════════════════════ -->
+<div id="l7m05" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🐙</span>
+    <div>
+        <div class="lp-title">LP7 — Design and Implement a Dependency Management Strategy</div>
+        <div class="lp-sub">Module 5: Introduction to GitHub Packages</div>
+    </div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> GitHub Packages Overview</div>
+    <div class="panel-body">
+        <p><span class="key-term">GitHub Packages</span> = package registry integrated directly with GitHub repositories.</p>
+        <ul>
+            <li>Supports: npm, NuGet, Maven, RubyGems, Docker/OCI containers</li>
+            <li>Packages are <strong>scoped to a repository or org</strong> — access inherits from repo permissions</li>
+            <li>Authenticate with GitHub token (PAT or GITHUB_TOKEN in Actions)</li>
+            <li>Free for public packages; storage/data costs for private</li>
+        </ul>
+        <div class="callout exam"><span class="ci">🎯</span><div>GitHub Packages is <strong>tightly integrated with GitHub Actions</strong>. Use <code>GITHUB_TOKEN</code> — auto-generated per workflow run — to push packages without creating or storing a PAT.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> Azure Artifacts vs GitHub Packages</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Feature</th><th>Azure Artifacts</th><th>GitHub Packages</th></tr>
+            <tr><td>Feed Views / Promotion</td><td>✅ @local/@prerelease/@release</td><td>❌ Not native</td></tr>
+            <tr><td>Upstream Proxying</td><td>✅ Full upstream source config</td><td>⚠️ Limited</td></tr>
+            <tr><td>Universal Packages</td><td>✅ Any file type</td><td>❌ No</td></tr>
+            <tr><td>Container Registry</td><td>✅ Azure Container Registry</td><td>✅ GitHub Container Registry (ghcr.io)</td></tr>
+            <tr><td>CI/CD Integration</td><td>✅ Azure Pipelines native</td><td>✅ GitHub Actions native</td></tr>
+            <tr><td>Retention Policies</td><td>✅ Configurable</td><td>⚠️ Manual only</td></tr>
+        </table>
+        <div class="callout tip"><span class="ci">💡</span><div>Use <strong>Azure Artifacts</strong> when you need advanced feed views, upstream caching, and Universal Packages. Use <strong>GitHub Packages</strong> when your whole pipeline lives in GitHub Actions and you want zero-config auth.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> Publishing to GitHub Packages — GitHub Actions</div>
+    <div class="panel-body">
+        <div class="code-block">name: Publish NuGet Package
+on:
+  push:
+    tags: ['v*']
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pack
+        run: dotnet pack --configuration Release
+      - name: Push to GitHub Packages
+        run: dotnet nuget push "**/*.nupkg" --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" --api-key ${{ secrets.GITHUB_TOKEN }}</div>
+        <div class="callout exam"><span class="ci">🎯</span><div><code>secrets.GITHUB_TOKEN</code> is automatically provided in every Actions workflow — no setup needed. It has <strong>write:packages</strong> permission by default when publishing from the same repo.</div></div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     LP8 M01 — Implement Tools to Track Usage and Flow
+═══════════════════════════════════════════ -->
+<div id="l8m01" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">📊</span>
+    <div>
+        <div class="lp-title">LP8 — Implement Continuous Feedback</div>
+        <div class="lp-sub">Module 1: Implement Tools to Track Usage and Flow</div>
+    </div>
+</div>
+
+<div class="callout exam"><span class="ci">🎯</span><div><strong>EXAM WEIGHT:</strong> LP8 = Instrumentation Strategy = 9% of exam. Know Application Insights components, KQL basics, Azure Monitor hierarchy, and how telemetry types map to tools.</div></div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> Application Insights — Core Telemetry Types</div>
+    <div class="panel-body">
+        <p><span class="key-term">Application Insights</span> = APM (Application Performance Monitoring) — an Azure Monitor feature for app telemetry.</p>
+        <table class="comparison-table">
+            <tr><th>Telemetry Type</th><th>What It Captures</th></tr>
+            <tr><td><span class="badge blue">Requests</span></td><td>Incoming HTTP calls — duration, status code, success/failure</td></tr>
+            <tr><td><span class="badge error">Exceptions</span></td><td>Unhandled exceptions with stack traces</td></tr>
+            <tr><td><span class="badge orange">Dependencies</span></td><td>Outgoing calls (SQL, HTTP, Redis) — shows where time is spent</td></tr>
+            <tr><td><span class="badge success">Traces</span></td><td>Custom log messages from app code</td></tr>
+            <tr><td><span class="badge purple">Custom Events</span></td><td>Business events (purchase, login, feature use)</td></tr>
+            <tr><td><span class="badge warning">Metrics</span></td><td>Custom numeric measurements (queue depth, cart size)</td></tr>
+        </table>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> Application Insights Key Features</div>
+    <div class="panel-body">
+        <ul>
+            <li>🔴 <strong>Live Metrics</strong>: real-time telemetry stream — latency, request rate, failures per second</li>
+            <li>🗺️ <strong>Application Map</strong>: visual topology of your distributed system — which service calls which, with failure rates</li>
+            <li>🌐 <strong>Availability Tests</strong>: URL ping tests from multiple global locations, multi-step web tests</li>
+            <li>🔍 <strong>Smart Detection</strong>: AI-powered anomaly detection — alerts on unusual patterns without manual thresholds</li>
+            <li>👥 <strong>User Flows</strong>: visualize how users navigate through your app</li>
+            <li>🚀 <strong>Performance</strong>: end-to-end transaction traces with dependency breakdown</li>
+        </ul>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Application Map</strong> shows distributed system topology — which components call which. <strong>Live Metrics</strong> = real-time. Don't confuse them on the exam.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> Azure Monitor Hierarchy</div>
+    <div class="panel-body">
+        <p><span class="key-term">Azure Monitor</span> is the umbrella service. Everything feeds into it:</p>
+        <div class="flow-row">
+            <div class="flow-box" style="border-color:var(--blue)">Azure Resources</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box" style="border-color:var(--orange)">Azure Monitor</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box" style="border-color:var(--purple)">Log Analytics Workspace</div>
+        </div>
+        <ul style="margin-top:10px">
+            <li><strong>Metrics</strong>: time-series numerical data — fast, queryable via Metrics Explorer</li>
+            <li><strong>Logs</strong>: rich structured data sent to Log Analytics — query with KQL</li>
+            <li><strong>Activity Log</strong>: who did what to Azure resources (admin operations)</li>
+            <li><strong>Diagnostic Settings</strong>: configure what a resource sends to Log Analytics / Storage / Event Hub</li>
+        </ul>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--purple)"></span> KQL — Kusto Query Language</div>
+    <div class="panel-body">
+        <p><span class="key-term">KQL</span> = the query language for Log Analytics and Application Insights.</p>
+        <div class="code-block">// Find failed requests in last 24h
+requests
+| where success == false
+| where timestamp > ago(24h)
+| summarize count() by resultCode
+| order by count_ desc
+
+// Top 5 slowest dependencies
+dependencies
+| where timestamp > ago(1h)
+| summarize avg(duration) by name
+| top 5 by avg_duration desc</div>
+        <div class="callout exam"><span class="ci">🎯</span><div>KQL is pipe-based (like shell pipelines). Key operators: <code>where</code> (filter), <code>summarize</code> (aggregate), <code>project</code> (select columns), <code>order by</code>, <code>top</code>, <code>join</code>. The exam tests basic KQL structure.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--yellow)"></span> Flash Cards — LP8 M01</div>
+    <div class="panel-body">
+        <button class="reveal-all-btn" onclick="revealAll('fc-l8m01')">Reveal All Answers</button>
+        <div class="flash-grid" id="fc-l8m01">
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What is Application Insights and where does it sit?</div>
+                <div class="a">Application Insights is an APM feature of Azure Monitor. It collects telemetry (requests, exceptions, dependencies, traces, events, metrics) from apps via SDK or auto-instrumentation.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What does the Application Map show?</div>
+                <div class="a">Visual topology of distributed system components — which services call which, with failure rates and average latency per connection. Great for identifying bottlenecks in microservices.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Metrics vs Logs in Azure Monitor?</div>
+                <div class="a">Metrics = lightweight numeric time-series, queried via Metrics Explorer. Logs = rich structured data in Log Analytics, queried with KQL. Logs are more flexible; Metrics are faster/cheaper.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What query language does Log Analytics use?</div>
+                <div class="a">KQL (Kusto Query Language). Pipe-based, like shell. Key operators: where, summarize, project, order by, top, join. Used in Azure Monitor, App Insights, and Sentinel.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     LP8 M02 — Develop Monitor and Status Dashboards
+═══════════════════════════════════════════ -->
+<div id="l8m02" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🖥️</span>
+    <div>
+        <div class="lp-title">LP8 — Implement Continuous Feedback</div>
+        <div class="lp-sub">Module 2: Develop Monitor and Status Dashboards</div>
+    </div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> Azure Dashboard vs Workbooks vs Grafana</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Tool</th><th>Best For</th><th>Data Source</th></tr>
+            <tr><td><span class="badge blue">Azure Dashboards</span></td><td>Quick overview tiles, ops teams, exec views</td><td>Metrics, Activity Log, pinned charts</td></tr>
+            <tr><td><span class="badge purple">Azure Workbooks</span></td><td>Rich interactive reports, step-by-step analysis</td><td>Log Analytics (KQL), Metrics, App Insights</td></tr>
+            <tr><td><span class="badge orange">Azure Managed Grafana</span></td><td>Advanced visualizations, multi-source, open-source ecosystem</td><td>Azure Monitor, Log Analytics, Prometheus</td></tr>
+        </table>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Azure Managed Grafana</strong> is a fully managed Grafana service in Azure. Native integration with Azure Monitor data sources. No setup of Grafana infrastructure needed.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> Azure Service Health</div>
+    <div class="panel-body">
+        <p><span class="key-term">Azure Service Health</span> provides personalized alerts and guidance when Azure service issues affect you.</p>
+        <ul>
+            <li><strong>Service Issues</strong>: Azure outages and incidents currently affecting your resources</li>
+            <li><strong>Planned Maintenance</strong>: upcoming maintenance that may affect availability</li>
+            <li><strong>Health Advisories</strong>: features being deprecated, changes requiring action</li>
+            <li><strong>Resource Health</strong>: health of individual resources (VM, SQL, etc.)</li>
+        </ul>
+        <div class="callout tip"><span class="ci">💡</span><div>Configure Service Health alerts to route to action groups — so your team gets notified when an Azure region has issues before users start calling. Essential for SRE teams.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> SLI / SLO / SLA — The Reliability Framework</div>
+    <div class="panel-body">
+        <div class="three-col">
+            <div class="tool-card">
+                <h3>📏 SLI — Service Level Indicator</h3>
+                <p>A specific metric measuring system behavior. Example: "request latency at p99", "availability percentage", "error rate". Raw measurement.</p>
+            </div>
+            <div class="tool-card">
+                <h3>🎯 SLO — Service Level Objective</h3>
+                <p>Target value for an SLI. Internal commitment. Example: "p99 latency &lt; 200ms", "availability &gt; 99.9%". If SLO is breached → burn error budget.</p>
+            </div>
+            <div class="tool-card">
+                <h3>📄 SLA — Service Level Agreement</h3>
+                <p>External, contractual commitment to customers. Usually includes financial penalties. Always less strict than internal SLO — SLO is your buffer.</p>
+            </div>
+        </div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Error budget</strong> = 1 - SLO. If SLO = 99.9% availability → error budget = 0.1% downtime = 8.7 hours/year. Spend error budget on risky deployments; when depleted → freeze releases.</div></div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     LP8 M03 — Share Knowledge Within Teams
+═══════════════════════════════════════════ -->
+<div id="l8m03" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🤝</span>
+    <div>
+        <div class="lp-title">LP8 — Implement Continuous Feedback</div>
+        <div class="lp-sub">Module 3: Share Knowledge Within Teams</div>
+    </div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> Azure DevOps Wikis</div>
+    <div class="panel-body">
+        <p>Two types of wikis in Azure DevOps:</p>
+        <ul>
+            <li><span class="key-term">Project Wiki</span>: Created by Azure DevOps, stored as a Git repo in the project. Markdown-based. Version-controlled. Default choice.</li>
+            <li><span class="key-term">Published Code Wiki</span>: Publishes a folder in an existing repo as a wiki. Docs live alongside code — great for API documentation.</li>
+        </ul>
+        <div class="callout exam"><span class="ci">🎯</span><div>Project Wiki = standalone wiki repo. Published Code Wiki = points to a folder in a code repo. If you want docs next to code → Published Code Wiki. If you want a shared team knowledge base → Project Wiki.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> GitHub Discussions &amp; Team Collaboration</div>
+    <div class="panel-body">
+        <p>Beyond code — team knowledge sharing tools:</p>
+        <ul>
+            <li><strong>GitHub Discussions</strong>: Forum-style conversations within a repo. Q&amp;A, announcements, ideas. Separate from Issues (bug/feature tracking).</li>
+            <li><strong>GitHub Pages</strong>: Host static docs sites from a repo branch. Commonly used for project documentation.</li>
+            <li><strong>ADO Team Dashboards</strong>: Visible KPIs, sprint progress, and alerts for the whole team — shared visibility.</li>
+        </ul>
+        <div class="callout tip"><span class="ci">💡</span><div>Discussions vs Issues: Issues = actionable work items with close/reopen lifecycle. Discussions = ongoing conversation with no required resolution. Don't use Issues for "open-ended questions."</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> Inner Source and Knowledge Culture</div>
+    <div class="panel-body">
+        <div class="two-col">
+            <div>
+                <p><span class="key-term">Inner Source</span> = applying open-source collaboration practices within a company:</p>
+                <ul>
+                    <li>Code is visible across teams (not just your squad)</li>
+                    <li>Anyone can submit PRs to improve shared components</li>
+                    <li>Reduces silos, avoids reinventing wheels</li>
+                    <li>Requires discoverable repos + welcoming contribution guides</li>
+                </ul>
+            </div>
+            <div class="callout tip"><span class="ci">💡</span><div>Teams with strong inner source culture have <strong>30-50% less duplicated code</strong> across the org. The key enabler: <strong>searchable, well-documented repos</strong> + a culture that rewards contributions outside your team.</div></div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     LP8 M04 — Design Processes to Automate Application Analytics
+═══════════════════════════════════════════ -->
+<div id="l8m04" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🤖</span>
+    <div>
+        <div class="lp-title">LP8 — Implement Continuous Feedback</div>
+        <div class="lp-sub">Module 4: Design Processes to Automate Application Analytics</div>
+    </div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> Continuous Monitoring in DevOps</div>
+    <div class="panel-body">
+        <p><span class="key-term">Continuous monitoring</span> integrates observability into every stage of the DevOps loop — not just production:</p>
+        <ul>
+            <li><strong>Pre-production</strong>: Load tests, synthetic tests, performance benchmarks in CI</li>
+            <li><strong>Deployment gates</strong>: Auto-query App Insights after deployment — fail release if error rate spikes</li>
+            <li><strong>Post-deployment</strong>: Canary analysis, progressive rollout with telemetry validation</li>
+            <li><strong>Production</strong>: Real user monitoring, synthetic availability tests</li>
+        </ul>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Release gates</strong> in Azure Pipelines can query Application Insights / Azure Monitor automatically. If error rate exceeds threshold post-deploy → gate blocks progression or triggers rollback.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--purple)"></span> Feature Flags + Analytics</div>
+    <div class="panel-body">
+        <p>Feature flags enable <strong>controlled rollouts with telemetry-driven decisions</strong>:</p>
+        <ul>
+            <li>Enable feature for 5% of users → measure conversion, error rate, performance</li>
+            <li>If metrics OK → expand to 25% → 100%</li>
+            <li>If metrics bad → toggle off instantly — no deployment needed</li>
+            <li>A/B test variants with statistical significance</li>
+        </ul>
+        <div class="callout tip"><span class="ci">💡</span><div>Tools: <strong>Azure App Configuration</strong> (feature flags + config management), <strong>LaunchDarkly</strong> (advanced targeting + analytics), <strong>Unleash</strong> (open source). App Configuration integrates natively with Azure DevOps pipelines.</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Azure App Configuration</strong> = the Azure-native feature flag and centralized configuration service. Integrates with Key Vault for secrets. Exam tests: what service manages feature flags in Azure → App Configuration.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> Feedback Integration with Work Items</div>
+    <div class="panel-body">
+        <div class="two-col">
+            <div>
+                <p>Closing the feedback loop — from monitoring to actionable work items:</p>
+                <ul>
+                    <li>App Insights can <strong>auto-create ADO work items</strong> from exceptions</li>
+                    <li>Smart Detection creates work items for anomaly clusters</li>
+                    <li>Azure Monitor alerts can trigger <strong>Logic Apps</strong> → create GitHub Issues / ADO Bugs</li>
+                    <li>ITSM integration: ServiceNow, Jira, PagerDuty via action groups</li>
+                </ul>
+            </div>
+            <div class="callout tip"><span class="ci">💡</span><div>Best practice: configure <strong>exception grouping</strong> in App Insights so 1000 instances of the same error = 1 work item, not 1000. Without grouping, your backlog drowns in noise.</div></div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     LP8 M05 — Manage Alerts, Retrospectives & Just Culture
+═══════════════════════════════════════════ -->
+<div id="l8m05" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🔔</span>
+    <div>
+        <div class="lp-title">LP8 — Implement Continuous Feedback</div>
+        <div class="lp-sub">Module 5: Manage Alerts, Blameless Retrospectives and a Just Culture</div>
+    </div>
+</div>
+
+<div class="callout exam"><span class="ci">🎯</span><div><strong>EXAM FOCUS:</strong> Alert rule components, action groups, alert types (metric vs log vs activity log). Know what a blameless retrospective achieves and how it differs from a blame culture.</div></div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--red)"></span> Azure Monitor Alert Rules</div>
+    <div class="panel-body">
+        <p>Alert rule = <span class="key-term">Signal + Condition + Action Group</span></p>
+        <table class="comparison-table">
+            <tr><th>Alert Type</th><th>Signal Source</th><th>Use Case</th></tr>
+            <tr><td><span class="badge blue">Metric Alert</span></td><td>Azure Monitor Metrics</td><td>CPU &gt; 80%, response time &gt; 500ms</td></tr>
+            <tr><td><span class="badge purple">Log Alert</span></td><td>Log Analytics / KQL query</td><td>Error count &gt; 50 in 5 min</td></tr>
+            <tr><td><span class="badge warning">Activity Log Alert</span></td><td>Azure Activity Log</td><td>VM deleted, policy changed, role assigned</td></tr>
+            <tr><td><span class="badge success">Smart Detection</span></td><td>Application Insights</td><td>Anomaly in failure rate or performance</td></tr>
+        </table>
+        <div class="callout exam"><span class="ci">🎯</span><div>Activity Log Alerts fire on <strong>management plane operations</strong> (someone deleting or modifying resources). Metric/Log Alerts fire on <strong>data plane telemetry</strong> (app behavior). Know which to use for "alert when a VM is deleted."</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> Action Groups</div>
+    <div class="panel-body">
+        <p><span class="key-term">Action Group</span> = a collection of notification and action channels triggered by an alert.</p>
+        <p>Notification types:</p>
+        <ul>
+            <li>📧 Email / SMS / Push / Voice</li>
+            <li>🔗 Webhook / Secure Webhook</li>
+            <li>⚡ Azure Function</li>
+            <li>🔄 Logic App</li>
+            <li>📋 ITSM connector (ServiceNow, Jira)</li>
+            <li>🔧 Automation Runbook</li>
+            <li>🚨 PagerDuty / OpsGenie</li>
+        </ul>
+        <div class="callout tip"><span class="ci">💡</span><div>Action groups are <strong>reusable</strong> — attach the same "PagerDuty + Slack + ServiceNow" action group to 20 different alert rules. Change the action group once to update all alerts.</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div>The exam tests: <em>"Which component of an alert defines what happens when it fires?"</em> → <strong>Action Group</strong>. The alert rule defines WHEN; the action group defines WHAT.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--purple)"></span> Blameless Retrospectives</div>
+    <div class="panel-body">
+        <p>After an incident, a <span class="key-term">blameless retrospective</span> (post-mortem) focuses on <strong>what happened</strong>, not <strong>who did it</strong>:</p>
+        <ul>
+            <li>Assume everyone acted with good intentions and best available information</li>
+            <li>Focus on <strong>system failures</strong>, not individual failures</li>
+            <li>Ask "how could the system have prevented this?" not "who made the mistake?"</li>
+            <li>Action items are <strong>systemic improvements</strong>: better alerts, runbooks, automation</li>
+            <li>Written post-mortem shared publicly across engineering</li>
+        </ul>
+        <div class="callout tip"><span class="ci">💡</span><div>Google's SRE book popularized blameless post-mortems. Core insight: if people fear blame, they hide incidents and problems fester. Psychological safety → more incidents reported → faster system improvement.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> Just Culture</div>
+    <div class="panel-body">
+        <p><span class="key-term">Just culture</span> is a framework distinguishing between types of errors:</p>
+        <table class="comparison-table">
+            <tr><th>Error Type</th><th>Response</th></tr>
+            <tr><td>Human Error (honest mistake)</td><td>Console and support — system redesign to prevent recurrence</td></tr>
+            <tr><td>At-Risk Behavior (shortcut)</td><td>Coach and guide — remove incentives for the shortcut</td></tr>
+            <tr><td>Reckless Behavior (knowing violation)</td><td>Punitive action — this is the rare exception</td></tr>
+        </table>
+        <div class="callout exam"><span class="ci">🎯</span><div>Just Culture ≠ no accountability. Most errors are human/at-risk and need coaching + system fixes, NOT punishment. Only reckless/deliberate violations warrant punitive action. The exam tests this distinction.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--yellow)"></span> Flash Cards — LP8 M04 &amp; M05</div>
+    <div class="panel-body">
+        <button class="reveal-all-btn" onclick="revealAll('fc-l8m45')">Reveal All Answers</button>
+        <div class="flash-grid" id="fc-l8m45">
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What are the 3 parts of an Azure Monitor alert rule?</div>
+                <div class="a">Signal (what to monitor) + Condition (threshold/query that triggers) + Action Group (what to do when fired). Alert rule = WHEN; Action Group = WHAT.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Activity Log alert vs Metric alert — when to use each?</div>
+                <div class="a">Activity Log = management plane (VM deleted, RBAC changed). Metric = data plane telemetry (CPU high, response slow). "Alert when a resource is deleted" → Activity Log Alert.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What is the purpose of a blameless retrospective?</div>
+                <div class="a">Learn from incidents by focusing on system failures, not individual blame. Assumes good intent. Goal = systemic improvements: better alerts, runbooks, automation — not punishment.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What is Azure App Configuration used for?</div>
+                <div class="a">Centralized feature flag management and application configuration. Native Azure integration, pairs with Key Vault for secrets, enables canary/progressive rollouts via feature targeting.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What is an Action Group in Azure Monitor?</div>
+                <div class="a">A reusable set of notification/action channels (email, SMS, webhook, Logic App, ITSM, Function, PagerDuty). Attached to alert rules — defines WHAT happens when alert fires.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     EXAM TIPS — LP6 + LP7 + LP8
+═══════════════════════════════════════════ -->
+<div id="exam" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🎯</span>
+    <div>
+        <div class="lp-title">Exam Prep — LP6 · LP7 · LP8</div>
+        <div class="lp-sub">High-signal exam topics, traps, and scenario-to-tool matching</div>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--red)"></span> LP6 Security — Exam Traps</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Trap</th><th>Correct Answer</th></tr>
+            <tr><td>"Analyze source code for vulnerabilities" → which tool?</td><td><strong>CodeQL</strong> (SAST). Not Dependabot (that's SCA on third-party packages).</td></tr>
+            <tr><td>"Audit Open Source licenses" → which approach?</td><td><strong>SCA tools</strong> (Mend/FOSSA) that scan dependency manifests and flag license violations.</td></tr>
+            <tr><td>"Block deletion of a production Key Vault" → which mechanism?</td><td><strong>Resource Lock (CanNotDelete)</strong>, NOT RBAC deny assignment. Locks override RBAC.</td></tr>
+            <tr><td>"Apply 50 security policies as a single assignment" → what?</td><td><strong>Policy Initiative</strong> — bundles multiple policies, assign once.</td></tr>
+            <tr><td>"GPL library in a closed-source product" → risk?</td><td><strong>Strong copyleft</strong> — you may be required to open-source your entire product.</td></tr>
+            <tr><td>"GHAS features available in Azure DevOps?" → answer?</td><td>Yes. Secret scanning, code scanning, dependency review are in <strong>both GitHub and Azure DevOps</strong>.</td></tr>
+        </table>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> LP7 Dependency Management — Exam Traps</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Trap</th><th>Correct Answer</th></tr>
+            <tr><td>"Store compiled binaries with no standard package format" → where?</td><td><strong>Universal Packages</strong> in Azure Artifacts. Not NuGet, not npm.</td></tr>
+            <tr><td>"Consumers should only get production-approved packages" → how?</td><td>Configure upstream to point to <strong>@release view</strong> only. Views filter what's visible.</td></tr>
+            <tr><td>"Hide a package version from search but keep it installable" → how?</td><td><strong>Unlist</strong>, not Delete. Unlist = hidden but accessible by exact version.</td></tr>
+            <tr><td>"Breaking change in a library" → which version component?</td><td><strong>MAJOR</strong> version increment (e.g., 1.x.x → 2.0.0).</td></tr>
+            <tr><td>"Package won't be available if npm registry is down" → solution?</td><td>Configure <strong>upstream source</strong> in Azure Artifacts — caches public packages, insulates from registry downtime.</td></tr>
+            <tr><td>"Org-scoped vs project-scoped feed — which is wider?"</td><td><strong>Org-scoped</strong> — visible to all projects in the organization.</td></tr>
+        </table>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> LP8 Monitoring — Exam Traps</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Trap</th><th>Correct Answer</th></tr>
+            <tr><td>"Alert when a VM is deleted" → which alert type?</td><td><strong>Activity Log Alert</strong> — management plane operations, not metrics.</td></tr>
+            <tr><td>"What defines WHO gets notified when an alert fires?" → answer?</td><td><strong>Action Group</strong>. The alert rule defines WHEN; action group defines WHAT/WHO.</td></tr>
+            <tr><td>"Real-time telemetry from Application Insights" → feature?</td><td><strong>Live Metrics Stream</strong>, not Application Map (that's topology).</td></tr>
+            <tr><td>"Manage feature flags in Azure" → which service?</td><td><strong>Azure App Configuration</strong>. Not Key Vault (secrets only), not App Settings.</td></tr>
+            <tr><td>"Query logs in Azure Monitor" → what language?</td><td><strong>KQL</strong> (Kusto Query Language). Used in Log Analytics, App Insights, Sentinel.</td></tr>
+            <tr><td>"Blameless retro → focus on what?"</td><td><strong>System failures</strong>, not individual blame. Goal = systemic improvements.</td></tr>
+            <tr><td>"SLO vs SLA — which is stricter?"</td><td><strong>SLO</strong> (internal objective) is always stricter than SLA (external contract) — SLO is the buffer.</td></tr>
+        </table>
+    </div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> Scenario-to-Tool Quick Reference</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Scenario</th><th>Tool / Service</th></tr>
+            <tr><td>Scan MY code for security flaws</td><td>CodeQL (SAST)</td></tr>
+            <tr><td>Scan THIRD-PARTY deps for CVEs</td><td>Dependabot / SCA tools</td></tr>
+            <tr><td>Enforce Azure resource compliance</td><td>Azure Policy</td></tr>
+            <tr><td>Block resource deletion</td><td>Resource Lock (CanNotDelete)</td></tr>
+            <tr><td>Centralize package storage</td><td>Azure Artifacts Feed</td></tr>
+            <tr><td>Cache public npm/NuGet packages</td><td>Upstream Sources in Azure Artifacts</td></tr>
+            <tr><td>Promote package to production-ready</td><td>Feed Views (@release)</td></tr>
+            <tr><td>Auto-bump package versions</td><td>GitVersion or Build Counter</td></tr>
+            <tr><td>Track application errors in production</td><td>Application Insights</td></tr>
+            <tr><td>Query logs with custom logic</td><td>KQL in Log Analytics</td></tr>
+            <tr><td>Visualize microservice call topology</td><td>Application Map</td></tr>
+            <tr><td>Alert on Azure resource management ops</td><td>Activity Log Alert</td></tr>
+            <tr><td>Route alerts to PagerDuty + email</td><td>Action Group</td></tr>
+            <tr><td>Manage feature flags in Azure</td><td>Azure App Configuration</td></tr>
+            <tr><td>Team docs next to code</td><td>Published Code Wiki</td></tr>
+        </table>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--purple)"></span> High-Value Exam Facts to Memorize</div>
+    <div class="panel-body">
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Security %:</strong> Cost of defect: $80 design → $240 coding → $960 testing → $7,600 prod. The 95x production multiplier.</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>CodeQL:</strong> "Treats code as a queryable database." SAST. Not runtime. Runs on PRs to block merges.</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Locks override RBAC.</strong> Even Owner can't delete a CanNotDelete-locked resource without removing the lock first.</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>SemVer:</strong> MAJOR.MINOR.PATCH. MAJOR = breaking. MINOR = new feature. PATCH = bug fix.</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Feed Views:</strong> @local → @prerelease → @release. Consumers pin to @release. Views are pointers, not copies.</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Action Group</strong> = WHO gets notified. Alert Rule = WHEN it fires. Always separate on the exam.</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>AGPL</strong> extends GPL to network services. Running AGPL code as SaaS = must share source with users.</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Unlist ≠ Delete.</strong> Unlist hides from search but package still installable by exact version.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--yellow)"></span> Master Flash Cards — All LP6·7·8</div>
+    <div class="panel-body">
+        <button class="reveal-all-btn" onclick="revealAll('fc-master')">Reveal All Answers</button>
+        <div class="flash-grid" id="fc-master">
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Three OSS license tiers — name them and an example of each.</div>
+                <div class="a">Permissive (MIT, Apache 2.0), Downstream Copyleft (LGPL, MPL), Strong Copyleft (GPL, AGPL). Strong copyleft = must open-source derivatives.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Azure Policy — what is an Initiative?</div>
+                <div class="a">A collection of policies bundled together for a compliance goal. Assign one initiative instead of many individual policies. E.g., PCI-DSS initiative.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">5 package types in Azure Artifacts?</div>
+                <div class="a">NuGet (.NET), npm (JavaScript), Maven (Java), PyPI (Python), Universal Packages (any file type).</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What is a feed upstream source?</div>
+                <div class="a">A public registry (npmjs, nuget.org, PyPI) connected to your Azure Artifacts feed. Requests for missing packages pull from upstream and cache locally.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">SemVer: what does 2.4.1 mean?</div>
+                <div class="a">MAJOR=2 (breaking changes since v1), MINOR=4 (4 new backward-compatible features since 2.0), PATCH=1 (1 bug fix since 2.4.0).</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">SLI vs SLO vs SLA?</div>
+                <div class="a">SLI = measurement (p99 latency). SLO = internal target (p99 &lt; 200ms). SLA = external contract. SLO is stricter than SLA — it's the buffer.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Just culture: when is punitive action appropriate?</div>
+                <div class="a">Only for reckless behavior (knowing/intentional violation). Human error = console + system fix. At-risk behavior = coach + remove incentive. NOT punishment for honest mistakes.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What is Azure App Configuration?</div>
+                <div class="a">Azure-native centralized feature flag and configuration management service. Enables feature targeting/progressive rollout. Pairs with Key Vault for secrets.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+function showTab(id){
+    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.wf-tab').forEach(t=>t.classList.remove('active'));
+    const el=document.getElementById(id);
+    if(el) el.classList.add('active');
+    document.querySelectorAll('.wf-tab').forEach(t=>{
+        if(t.getAttribute('onclick')===`showTab('${id}')`) t.classList.add('active');
+    });
+}
+function revealAll(gridId){
+    document.querySelectorAll(`#${gridId} .flash-card`).forEach(c=>c.classList.add('revealed'));
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LP4 — Secure Continuous Deployment | AZ-400</title>
+    <style>
+        :root{
+            --bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:#30363d;
+            --text:#e6edf3;--muted:#8b949e;
+            --green:#3fb950;--blue:#58a6ff;--red:#f85149;--yellow:#d29922;
+            --orange:#e3b341;--purple:#bc8cff;--pink:#f778ba;--teal:#39d353;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:var(--bg);color:var(--text);font-family:'Cascadia Code','Fira Code',monospace,system-ui;line-height:1.6;font-size:14px}
+        nav{position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;padding:10px 16px;z-index:100;overflow-x:auto;gap:10px}
+        .nav-logo{display:flex;align-items:center;gap:8px;font-weight:bold;font-size:14px;flex-shrink:0;white-space:nowrap}
+        .wf-tabs{display:flex;gap:4px;flex-wrap:wrap}
+        .wf-tab{background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 12px;cursor:pointer;border-radius:6px;font-family:inherit;transition:.2s;font-size:11px;white-space:nowrap}
+        .wf-tab:hover{color:var(--text);background:var(--surface2)}
+        .wf-tab.active{color:var(--blue);border-color:var(--blue);background:rgba(88,166,255,.1)}
+        .container{max-width:1200px;margin:0 auto;padding:20px}
+        .tab-content{display:none}
+        .tab-content.active{display:block}
+        .panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px}
+        .panel-header{background:var(--surface2);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:8px;font-weight:bold;font-size:13px}
+        .ph-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+        .panel-body{padding:16px}
+        .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+        .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+        .callout{background:var(--surface);border-left:4px solid var(--blue);padding:12px 16px;margin-bottom:12px;border-radius:4px;display:flex;gap:12px;align-items:flex-start;font-size:13px}
+        .callout.warn{border-left-color:var(--yellow)}
+        .callout.success{border-left-color:var(--green)}
+        .callout.danger{border-left-color:var(--red)}
+        .callout.tip{border-left-color:var(--purple)}
+        .callout.exam{border-left-color:var(--orange);background:rgba(227,179,65,.06)}
+        .ci{font-size:18px;flex-shrink:0}
+        .comparison-table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:12px}
+        .comparison-table th{background:var(--surface2);color:var(--text);padding:10px 12px;text-align:left;border:1px solid var(--border);font-weight:bold}
+        .comparison-table td{padding:10px 12px;border:1px solid var(--border);background:var(--surface)}
+        .comparison-table tr:nth-child(even) td{background:var(--surface2)}
+        .badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:bold;margin-right:4px;margin-bottom:2px}
+        .badge.success{background:rgba(63,185,80,.2);color:var(--green)}
+        .badge.warning{background:rgba(210,153,34,.2);color:var(--yellow)}
+        .badge.error{background:rgba(248,81,73,.2);color:var(--red)}
+        .badge.blue{background:rgba(88,166,255,.2);color:var(--blue)}
+        .badge.purple{background:rgba(188,140,255,.2);color:var(--purple)}
+        .badge.orange{background:rgba(227,179,65,.2);color:var(--orange)}
+        .badge.teal{background:rgba(57,211,83,.15);color:var(--teal)}
+        .badge.pink{background:rgba(247,120,186,.2);color:var(--pink)}
+        .code-block{background:var(--surface2);border:1px solid var(--border);padding:12px;border-radius:6px;overflow-x:auto;margin-bottom:12px;color:var(--blue);font-family:'Cascadia Code',monospace;font-size:12px;white-space:pre}
+        .terminal{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px}
+        .tbar{background:var(--surface2);border-bottom:1px solid var(--border);padding:8px 12px;display:flex;align-items:center;gap:6px}
+        .td{width:12px;height:12px;border-radius:50%}
+        .tlabel{margin-left:auto;font-size:11px;color:var(--muted)}
+        .tbody{padding:12px;font-family:'Cascadia Code',monospace;font-size:12px}
+        .tc{color:var(--green);margin-bottom:4px;white-space:pre-wrap}
+        .tc::before{content:"$ ";color:var(--green);font-weight:bold}
+        .to{color:var(--muted);margin-bottom:4px;white-space:pre-wrap}
+        .tok{color:var(--green);margin-bottom:4px}
+        .twarn{color:var(--yellow);margin-bottom:4px}
+        .do-dont{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+        .do-box{border-left:4px solid var(--green);background:var(--surface);padding:12px 16px;border-radius:4px}
+        .dont-box{border-left:4px solid var(--red);background:var(--surface);padding:12px 16px;border-radius:4px}
+        .do-box::before{content:"✓ DO: ";color:var(--green);font-weight:bold;display:block;margin-bottom:6px;font-size:12px}
+        .dont-box::before{content:"✗ DON'T: ";color:var(--red);font-weight:bold;display:block;margin-bottom:6px;font-size:12px}
+        .tool-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;transition:.2s}
+        .tool-card:hover{border-color:var(--blue);transform:translateY(-2px)}
+        .tool-card h3{color:var(--blue);margin-bottom:6px;font-size:13px}
+        .tool-card p{color:var(--muted);font-size:12px;line-height:1.5}
+        .flow-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+        .flow-box{background:var(--surface2);border:1px solid var(--border);padding:6px 12px;border-radius:6px;font-size:12px}
+        .flow-arrow{color:var(--muted);font-size:16px}
+        .key-term{color:var(--orange);font-weight:bold}
+        .highlight{color:var(--green)}
+        .subtle{color:var(--muted);font-size:11px}
+        .flash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:16px}
+        .flash-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;cursor:pointer;transition:.2s}
+        .flash-card:hover{border-color:var(--purple);transform:translateY(-2px)}
+        .flash-card .q{color:var(--blue);font-size:12px;margin-bottom:8px;font-weight:bold}
+        .flash-card .a{color:var(--green);font-size:12px;display:none}
+        .flash-card.revealed .a{display:block}
+        .flash-card.revealed .q{color:var(--muted)}
+        .flash-hint{color:var(--muted);font-size:11px;margin-top:6px}
+        .reveal-all-btn{background:rgba(188,140,255,.15);border:1px solid rgba(188,140,255,.3);color:var(--purple);padding:8px 16px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:bold;margin-bottom:16px}
+        .reveal-all-btn:hover{background:rgba(188,140,255,.25)}
+        .lp-banner{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
+        .lp-banner .lp-icon{font-size:22px}
+        .lp-banner .lp-title{font-weight:bold;color:var(--text);margin-bottom:2px;font-size:13px}
+        .lp-banner .lp-sub{color:var(--muted);font-size:12px}
+        .ring-row{display:flex;gap:0;margin-bottom:16px;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+        .ring{flex:1;padding:12px 8px;text-align:center;font-size:11px;font-weight:bold}
+        .ring .ring-num{font-size:16px;display:block;margin-bottom:4px}
+        .ring .ring-label{color:var(--muted);font-size:10px;font-weight:normal}
+        h2{font-size:16px;color:var(--text);margin-bottom:12px}
+        h3{font-size:13px;color:var(--text);margin-bottom:8px}
+        p{font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.6}
+        li{font-size:13px;color:var(--muted);margin-left:16px;margin-bottom:4px;line-height:1.5}
+        ul{margin-bottom:10px}
+        @media(max-width:700px){.two-col,.three-col,.do-dont{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="nav-logo">🚀 <span>LP4 — Secure CD | AZ-400</span></div>
+    <div class="wf-tabs">
+        <button class="wf-tab active" onclick="showTab('m01')">M01 Deployment Patterns</button>
+        <button class="wf-tab" onclick="showTab('m02')">M02 Blue-Green &amp; Toggles</button>
+        <button class="wf-tab" onclick="showTab('m03')">M03 Canary &amp; Dark Launch</button>
+        <button class="wf-tab" onclick="showTab('m04')">M04 A/B &amp; Progressive</button>
+        <button class="wf-tab" onclick="showTab('m05')">M05 Identity</button>
+        <button class="wf-tab" onclick="showTab('m06')">M06 App Config</button>
+        <button class="wf-tab" onclick="showTab('exam')">🎯 Exam Tips</button>
+    </div>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════
+     M01 — Introduction to Deployment Patterns
+═══════════════════════════════════════════ -->
+<div id="m01" class="tab-content active">
+<div class="lp-banner">
+    <span class="lp-icon">🚀</span>
+    <div>
+        <div class="lp-title">LP4 — Implement a Secure Continuous Deployment using Azure Pipelines</div>
+        <div class="lp-sub">Module 1: Introduction to Deployment Patterns</div>
+    </div>
+</div>
+
+<div class="callout exam"><span class="ci">🎯</span><div><strong>EXAM WEIGHT:</strong> LP4 patterns appear in pipeline scenario questions. Know the difference between <strong>deploy</strong> and <strong>release</strong>, understand each pattern's risk profile, and know which Azure services enable each pattern.</div></div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> Deploy vs Release — Critical Distinction</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Concept</th><th>Definition</th><th>Example</th></tr>
+            <tr><td><span class="badge blue">Deploy</span></td><td>Put code into an environment (technical act)</td><td>Push v2 to the staging slot</td></tr>
+            <tr><td><span class="badge success">Release</span></td><td>Make that code available to users (business act)</td><td>Swap staging → production</td></tr>
+        </table>
+        <div class="callout exam"><span class="ci">🎯</span><div><span class="key-term">Feature flags decouple deploy from release.</span> You can deploy code at 2am (dark, off) and release it at 9am (toggle on) — no new deployment needed. This is the superpower of progressive delivery.</div></div>
+        <p>Traditional approach: deploy = release (risky). Modern approach: deploy early, release when ready.</p>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> Why Deployment Patterns Exist</div>
+    <div class="panel-body">
+        <p>Every deployment pattern solves the same core problem: <span class="key-term">how do we get new code to users while minimizing risk?</span></p>
+        <ul>
+            <li>Big bang deployments = maximum risk, maximum blast radius</li>
+            <li>Progressive patterns = reduce blast radius, enable fast rollback</li>
+            <li>Each pattern trades off complexity vs risk reduction</li>
+            <li>Right pattern depends on: team size, traffic volume, tolerance for complexity</li>
+        </ul>
+        <div class="callout tip"><span class="ci">💡</span><div>Netflix, Google, and Amazon deploy hundreds of times per day using these patterns. Zero-downtime is not a luxury — it's an engineering discipline.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> Deployment Pattern Overview</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Pattern</th><th>Mechanism</th><th>Rollback Speed</th><th>Complexity</th><th>Best For</th></tr>
+            <tr><td><span class="badge blue">Blue-Green</span></td><td>Two identical envs, switch traffic</td><td>⚡ Instant (re-swap)</td><td>Medium</td><td>Clean cutover, zero downtime</td></tr>
+            <tr><td><span class="badge orange">Canary</span></td><td>Route % of traffic to new version</td><td>Fast (reduce %)</td><td>Medium</td><td>Validate with real users, low risk</td></tr>
+            <tr><td><span class="badge purple">A/B Testing</span></td><td>Two variants, measure behavior</td><td>Fast (toggle)</td><td>High</td><td>Business experiments, UX decisions</td></tr>
+            <tr><td><span class="badge success">Progressive/Ring</span></td><td>Expand audience in rings</td><td>Fast (stop ring)</td><td>High</td><td>Large-scale, gradual exposure</td></tr>
+            <tr><td><span class="badge pink">Dark Launch</span></td><td>Run silently, no user-visible output</td><td>Instant (disable)</td><td>High</td><td>Shadow testing, backend validation</td></tr>
+            <tr><td><span class="badge warning">Feature Toggle</span></td><td>Code path on/off via flag</td><td>⚡ Instant (toggle)</td><td>Low-Med</td><td>Decouple deploy from release</td></tr>
+        </table>
+    </div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--purple)"></span> Deployment Rings</div>
+    <div class="panel-body">
+        <p>Rings = concentric audience circles. Ship to inner rings first, monitor, expand outward:</p>
+        <div class="ring-row">
+            <div class="ring" style="background:rgba(248,81,73,.15);color:var(--red)"><span class="ring-num">0</span>Dev / Engineering<span class="ring-label">Internal only</span></div>
+            <div class="ring" style="background:rgba(227,179,65,.12);color:var(--orange)"><span class="ring-num">1</span>Early Adopters<span class="ring-label">Beta users / Insiders</span></div>
+            <div class="ring" style="background:rgba(88,166,255,.12);color:var(--blue)"><span class="ring-num">2</span>Limited Users<span class="ring-label">~10% of traffic</span></div>
+            <div class="ring" style="background:rgba(63,185,80,.12);color:var(--green)"><span class="ring-num">3</span>All Users<span class="ring-label">General availability</span></div>
+        </div>
+        <div class="callout exam"><span class="ci">🎯</span><div>Microsoft's Windows and Edge use deployment rings internally. Ring 0 = Microsoft employees. Ring 1 = Windows Insiders. Ring 3 = general public. The principle scales to any app.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--red)"></span> Rollback vs Roll Forward</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Strategy</th><th>Approach</th><th>When to Use</th></tr>
+            <tr><td><span class="badge error">Rollback</span></td><td>Revert to previous known-good version</td><td>Critical bug, data corruption risk, unclear root cause</td></tr>
+            <tr><td><span class="badge success">Roll Forward</span></td><td>Fast-path a hotfix deployment forward</td><td>Quick fix available, database migrations already ran, rollback too complex</td></tr>
+        </table>
+        <div class="callout warn"><span class="ci">⚠️</span><div>Database schema migrations make rollback dangerous — if new code added a column and old code doesn't know about it, rolling back can cause data errors. Plan for <strong>backward-compatible migrations</strong> to keep rollback viable.</div></div>
+    </div>
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     M02 — Blue-Green Deployment & Feature Toggles
+═══════════════════════════════════════════ -->
+<div id="m02" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🔵🟢</span>
+    <div>
+        <div class="lp-title">LP4 — Implement a Secure Continuous Deployment using Azure Pipelines</div>
+        <div class="lp-sub">Module 2: Implement Blue-Green Deployment and Feature Toggles</div>
+    </div>
+</div>
+
+<div class="callout exam"><span class="ci">🎯</span><div><strong>EXAM FOCUS:</strong> Azure App Service Deployment Slots are the primary mechanism for blue-green in Azure. Know slot swap behavior, <strong>sticky settings</strong>, and the swap workflow. Know the 4 types of feature toggles.</div></div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> Blue-Green Deployment</div>
+    <div class="panel-body">
+        <div class="flow-row">
+            <div class="flow-box" style="border-color:var(--blue)">🔵 Blue<br><span class="subtle">Live (v1)</span></div>
+            <div class="flow-arrow">←→ router</div>
+            <div class="flow-box" style="border-color:var(--green)">🟢 Green<br><span class="subtle">Deploy v2 here</span></div>
+        </div>
+        <div class="flow-row" style="margin-top:4px">
+            <div class="flow-box" style="border-color:var(--green)">🟢 Green now live (v2)</div>
+            <div class="flow-arrow">swap</div>
+            <div class="flow-box" style="border-color:var(--blue)">🔵 Blue is standby (v1)</div>
+        </div>
+        <ul style="margin-top:10px">
+            <li>Two identical production environments</li>
+            <li>Deploy new version to idle environment</li>
+            <li>Test in idle environment before switching</li>
+            <li>Switch router (DNS / load balancer / slot swap)</li>
+            <li>Rollback = swap back instantly</li>
+        </ul>
+        <div class="callout success"><span class="ci">✅</span><div><strong>Zero downtime deployment.</strong> Users never hit a "deploying" state — they're always on a live environment. Instant rollback by swapping back.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> Azure App Service Deployment Slots</div>
+    <div class="panel-body">
+        <p><span class="key-term">Deployment Slots</span> are the Azure-native blue-green mechanism for App Service.</p>
+        <ul>
+            <li>Each slot = a separate instance of your app with its own URL</li>
+            <li>Standard tier and above support multiple slots</li>
+            <li>Deploy to <strong>staging slot</strong>, test, then <strong>swap</strong> to production</li>
+            <li>Swap = warm-up routing. Azure sends requests to new slot until it responds, then flips traffic</li>
+        </ul>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Slot settings (sticky settings)</strong> — app settings and connection strings marked as "slot setting" stay with the slot and DON'T swap. Perfect for environment-specific settings (staging DB vs prod DB). Settings NOT marked as sticky WILL swap with the code.</div></div>
+        <div class="terminal">
+            <div class="tbar"><div class="td" style="background:#ff5f56"></div><div class="td" style="background:#ffbd2e"></div><div class="td" style="background:#27c93f"></div><span class="tlabel">Azure CLI</span></div>
+            <div class="tbody">
+                <div class="tc">az webapp deployment slot swap --name myapp --resource-group myRG --slot staging --target-slot production</div>
+                <div class="tok">✓ Swap completed. Production now running v2.</div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--purple)"></span> Feature Toggles — 4 Types</div>
+    <div class="panel-body">
+        <div class="callout exam"><span class="ci">🎯</span><div>The exam tests the <strong>4 feature toggle types</strong>. Know what each one is used for — not just that feature flags exist.</div></div>
+        <div class="three-col">
+            <div class="tool-card">
+                <h3>🚀 Release Toggle</h3>
+                <p>Deploy incomplete features hidden behind a flag. Enable when ready — no new deployment. Most common type. Short-lived by design.</p>
+                <p style="margin-top:6px"><span class="badge blue">Short-lived</span></p>
+            </div>
+            <div class="tool-card">
+                <h3>⚙️ Ops Toggle</h3>
+                <p>Kill switch for features in production. If a feature degrades performance, ops can disable it instantly without a deployment. Circuit breaker pattern.</p>
+                <p style="margin-top:6px"><span class="badge warning">Long-lived</span></p>
+            </div>
+            <div class="tool-card">
+                <h3>🧪 Experiment Toggle</h3>
+                <p>A/B testing toggle. Route cohorts of users to different code paths, collect telemetry, decide winner. Removed after experiment concludes.</p>
+                <p style="margin-top:6px"><span class="badge blue">Short-lived</span></p>
+            </div>
+        </div>
+        <div class="two-col">
+            <div class="tool-card">
+                <h3>🔒 Permission Toggle</h3>
+                <p>Expose features to specific user segments — premium users, beta testers, specific regions. Long-lived; tied to user tier/subscription/role.</p>
+                <p style="margin-top:6px"><span class="badge warning">Long-lived</span></p>
+            </div>
+            <div>
+                <div class="callout warn"><span class="ci">⚠️</span><div><strong>Toggle debt</strong> = stale flags that never get cleaned up. Each active flag = a code branch that must be tested. 50 old flags = exponential test complexity. Set expiry dates and remove flags after rollout.</div></div>
+                <div class="callout tip"><span class="ci">💡</span><div>Azure App Configuration = Azure-native feature flag service. Also: LaunchDarkly (industry standard), Unleash (open source), or simple config values.</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--yellow)"></span> Flash Cards — M01 &amp; M02</div>
+    <div class="panel-body">
+        <button class="reveal-all-btn" onclick="revealAll('fc-m12')">Reveal All Answers</button>
+        <div class="flash-grid" id="fc-m12">
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Deploy vs Release — what's the difference?</div>
+                <div class="a">Deploy = put code in an environment (technical). Release = make code available to users (business). Feature flags decouple these — deploy at 2am, release at 9am.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What is a "sticky setting" in App Service slots?</div>
+                <div class="a">An app setting or connection string marked as slot-specific — it stays with the slot during a swap and does NOT move to production. Used for environment-specific config (staging DB vs prod DB).</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Name the 4 types of feature toggles.</div>
+                <div class="a">Release toggle (ship incomplete features), Ops toggle (kill switch), Experiment toggle (A/B test), Permission toggle (feature for specific user segments).</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Blue-green rollback — how fast?</div>
+                <div class="a">Instant — swap the slot back. The old version is always sitting warm in the idle slot ready to receive traffic. No rebuild or redeployment needed.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     M03 — Canary Releases and Dark Launching
+═══════════════════════════════════════════ -->
+<div id="m03" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🐦</span>
+    <div>
+        <div class="lp-title">LP4 — Implement a Secure Continuous Deployment using Azure Pipelines</div>
+        <div class="lp-sub">Module 3: Implement Canary Releases and Dark Launching</div>
+    </div>
+</div>
+
+<div class="callout exam"><span class="ci">🎯</span><div><strong>EXAM FOCUS:</strong> Know the canary pattern flow and which Azure services route traffic for canary. Know <strong>dark launching</strong> vs canary — the key difference is user visibility. Know Azure Traffic Manager vs Front Door vs App Gateway for routing.</div></div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--yellow)"></span> Canary Release Pattern</div>
+    <div class="panel-body">
+        <p>Named after the "canary in the coal mine" — send a small group first as an early warning system.</p>
+        <div class="flow-row">
+            <div class="flow-box" style="border-color:var(--blue)">100% → v1 (stable)</div>
+        </div>
+        <div class="flow-row">
+            <div class="flow-box" style="border-color:var(--yellow)">5% → v2 (canary)</div>
+            <div class="flow-arrow">+</div>
+            <div class="flow-box">95% → v1</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box" style="border-color:var(--orange)">Monitor metrics</div>
+        </div>
+        <div class="flow-row">
+            <div class="flow-box" style="border-color:var(--green)">✅ Good → 25% → 50% → 100%</div>
+        </div>
+        <div class="flow-row">
+            <div class="flow-box" style="border-color:var(--red)">❌ Bad → reduce to 0%, rollback</div>
+        </div>
+        <ul style="margin-top:10px">
+            <li>Requires <strong>real production traffic</strong> to validate — staging can't replicate prod load patterns</li>
+            <li>Monitor: error rate, latency, conversion, business KPIs</li>
+            <li>Automate the go/no-go decision with telemetry gates</li>
+        </ul>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> Traffic Routing — Azure Services Compared</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Service</th><th>Layer</th><th>Routing Capability</th><th>Use For</th></tr>
+            <tr><td><span class="badge blue">Azure Traffic Manager</span></td><td>DNS (L7)</td><td>Geographic, weighted, priority, performance</td><td>Global geo-routing, weighted canary across regions</td></tr>
+            <tr><td><span class="badge orange">Azure Front Door</span></td><td>L7 (HTTP)</td><td>Weighted backends, header-based, URL-based</td><td>Global HTTP canary, CDN + routing combined</td></tr>
+            <tr><td><span class="badge success">App Gateway</span></td><td>L7 (HTTP)</td><td>URL-based, header-based, weighted</td><td>Regional weighted routing, WAF + canary</td></tr>
+            <tr><td><span class="badge purple">App Service Slots</span></td><td>App level</td><td>Percentage-based traffic split</td><td>Simple canary within single App Service</td></tr>
+        </table>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>App Service slot traffic split</strong> — you can route X% to staging slot without a full swap. Perfect for simple single-region canary without extra infrastructure.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--pink)"></span> Dark Launching</div>
+    <div class="panel-body">
+        <p><span class="key-term">Dark launching</span> = run the new code path silently alongside the old one — real production traffic, but results are <strong>hidden from users</strong>.</p>
+        <ul>
+            <li>Both old and new code process the same request</li>
+            <li>New code's response is logged/compared but <strong>not shown</strong></li>
+            <li>Validate correctness, performance, and stability under real load</li>
+            <li>Zero user impact — any bugs are silent</li>
+        </ul>
+        <div class="callout tip"><span class="ci">💡</span><div>Real example: GitHub used dark launching to test their new Git backend — ran it on every real request for months comparing outputs before switching. No users ever saw the new system until it was proven.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> Canary vs Dark Launch — Key Differences</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Aspect</th><th>Canary Release</th><th>Dark Launch</th></tr>
+            <tr><td>User visibility</td><td>Users SEE the new version</td><td>Users do NOT see new version output</td></tr>
+            <tr><td>Traffic</td><td>% of users routed to v2</td><td>All users hit both versions</td></tr>
+            <tr><td>User impact</td><td>Small group may see bugs</td><td>Zero user impact from bugs</td></tr>
+            <tr><td>Validation type</td><td>UX + functional + perf</td><td>Functional + perf only (no UX)</td></tr>
+            <tr><td>Complexity</td><td>Medium</td><td>High (shadow request infrastructure)</td></tr>
+        </table>
+        <div class="callout exam"><span class="ci">🎯</span><div>The exam trap: canary = users experience the new version (visible). Dark launch = new version runs in the background silently. If a question says "no users are affected by bugs" → dark launch.</div></div>
+    </div>
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     M04 — A/B Testing and Progressive Exposure
+═══════════════════════════════════════════ -->
+<div id="m04" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🧪</span>
+    <div>
+        <div class="lp-title">LP4 — Implement a Secure Continuous Deployment using Azure Pipelines</div>
+        <div class="lp-sub">Module 4: Implement A/B Testing and Progressive Exposure Deployment</div>
+    </div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> A/B Testing</div>
+    <div class="panel-body">
+        <p><span class="key-term">A/B Testing</span> is a controlled experiment — two variants shown to different user groups, measured against a business metric.</p>
+        <ul>
+            <li><strong>Variant A</strong>: control (current experience)</li>
+            <li><strong>Variant B</strong>: treatment (new experience)</li>
+            <li>Randomly assign users to variants — randomization is critical</li>
+            <li>Measure: conversion rate, click-through, revenue, engagement</li>
+            <li>Run until <strong>statistical significance</strong> achieved (p &lt; 0.05)</li>
+            <li>Declare winner, remove losing variant, clean up toggle</li>
+        </ul>
+        <div class="callout warn"><span class="ci">⚠️</span><div><strong>Never end an A/B test early</strong> because one variant is leading. Statistical significance requires enough samples — early stopping introduces bias. A test "looks like it's winning" at day 2 and loses by day 14 all the time.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> A/B vs Canary vs Feature Flag</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Pattern</th><th>Goal</th><th>Users See</th><th>Decision Basis</th></tr>
+            <tr><td><span class="badge blue">A/B Test</span></td><td>Which variant wins?</td><td>Different UX intentionally</td><td>Business metric (conversion)</td></tr>
+            <tr><td><span class="badge orange">Canary</span></td><td>Is this version safe?</td><td>Same UX, different version</td><td>Technical metric (errors, perf)</td></tr>
+            <tr><td><span class="badge success">Feature Flag</span></td><td>Enable/disable safely?</td><td>Feature on or off</td><td>Manual or metric-driven</td></tr>
+        </table>
+        <div class="callout exam"><span class="ci">🎯</span><div>A/B = <strong>business experiment</strong> (which button color converts better?). Canary = <strong>engineering risk management</strong> (is this new version stable?). Different goals, different metrics, different timescales.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--purple)"></span> Progressive Exposure / Ring Deployment</div>
+    <div class="panel-body">
+        <div class="ring-row">
+            <div class="ring" style="background:rgba(248,81,73,.15);color:var(--red)">
+                <span class="ring-num">🔴 0</span>Internal<span class="ring-label">Engineering team only</span>
+            </div>
+            <div class="ring" style="background:rgba(227,179,65,.12);color:var(--orange)">
+                <span class="ring-num">🟠 1</span>Insiders<span class="ring-label">Voluntary early adopters</span>
+            </div>
+            <div class="ring" style="background:rgba(88,166,255,.12);color:var(--blue)">
+                <span class="ring-num">🔵 2</span>Limited<span class="ring-label">~5-10% of users</span>
+            </div>
+            <div class="ring" style="background:rgba(63,185,80,.12);color:var(--green)">
+                <span class="ring-num">🟢 3</span>All Users<span class="ring-label">General availability</span>
+            </div>
+        </div>
+        <div class="two-col">
+            <div>
+                <p>Gate criteria between rings:</p>
+                <ul>
+                    <li>Error rate &lt; 0.1% for 24 hours</li>
+                    <li>p99 latency within 10% of baseline</li>
+                    <li>No critical alerts fired</li>
+                    <li>Manual approval from release manager</li>
+                </ul>
+            </div>
+            <div class="callout tip"><span class="ci">💡</span><div>In Azure Pipelines, model rings as <strong>stages</strong> with <strong>deployment gates</strong> and <strong>approval checks</strong> between them. Each ring = a stage. Gate queries Application Insights before allowing progression to next ring.</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--yellow)"></span> Flash Cards — M03 &amp; M04</div>
+    <div class="panel-body">
+        <button class="reveal-all-btn" onclick="revealAll('fc-m34')">Reveal All Answers</button>
+        <div class="flash-grid" id="fc-m34">
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Canary vs Dark Launch — key difference?</div>
+                <div class="a">Canary: % of users SEE the new version. Dark Launch: new code runs silently — users never see its output. Dark launch = zero user impact from bugs.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">A/B test vs Canary — what is each measuring?</div>
+                <div class="a">A/B = business experiment (conversion rate, click-through). Canary = engineering risk (error rate, latency). A/B tests UX variants; canary validates stability.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Which Azure service provides weighted traffic routing for canary?</div>
+                <div class="a">Options: Azure Traffic Manager (DNS-level), Azure Front Door (global HTTP), App Gateway (regional HTTP), or App Service deployment slot traffic split (simplest).</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What is "flighting"?</div>
+                <div class="a">Microsoft's term for controlled progressive rollout — releasing a feature to rings of users incrementally. Same concept as deployment rings / progressive exposure.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     M05 — Identity Management Systems
+═══════════════════════════════════════════ -->
+<div id="m05" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🔑</span>
+    <div>
+        <div class="lp-title">LP4 — Implement a Secure Continuous Deployment using Azure Pipelines</div>
+        <div class="lp-sub">Module 5: Integrate with Identity Management Systems</div>
+    </div>
+</div>
+
+<div class="callout exam"><span class="ci">🎯</span><div><strong>EXAM FOCUS:</strong> Know the difference between Service Principal, Managed Identity (system vs user-assigned), and Workload Identity Federation. The exam heavily tests <strong>when to use which</strong> and specifically tests OIDC-based auth for pipelines.</div></div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> Service Principal vs Managed Identity</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Identity Type</th><th>What It Is</th><th>Credentials</th><th>Best For</th></tr>
+            <tr><td><span class="badge blue">Service Principal</span></td><td>App identity in Azure AD. Manual registration.</td><td>Client ID + Secret or Certificate (you manage)</td><td>Cross-tenant, non-Azure resources, legacy pipelines</td></tr>
+            <tr><td><span class="badge success">System-Assigned MI</span></td><td>Identity tied to a specific Azure resource's lifecycle</td><td>None — Azure manages automatically</td><td>Single resource with Azure access needs</td></tr>
+            <tr><td><span class="badge orange">User-Assigned MI</span></td><td>Standalone identity resource, assignable to multiple resources</td><td>None — Azure manages automatically</td><td>Shared identity across multiple VMs/apps</td></tr>
+        </table>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Managed Identity = no credentials to store or rotate.</strong> Azure handles the token lifecycle. If the question says "avoid storing credentials" → Managed Identity. If cross-tenant or external service → Service Principal.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> System-Assigned vs User-Assigned MI</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Aspect</th><th>System-Assigned</th><th>User-Assigned</th></tr>
+            <tr><td>Lifecycle</td><td>Tied to the resource — deleted when resource is deleted</td><td>Independent resource — survives resource deletion</td></tr>
+            <tr><td>Sharing</td><td>One resource only</td><td>Assign to multiple resources</td></tr>
+            <tr><td>Setup</td><td>Enable toggle on the resource</td><td>Create standalone, then assign</td></tr>
+            <tr><td>Use case</td><td>Single VM needs Key Vault access</td><td>5 VMs sharing the same storage account identity</td></tr>
+        </table>
+        <div class="callout tip"><span class="ci">💡</span><div>Real world: App Service + Key Vault is the #1 use case. Enable system-assigned MI on the App Service, grant it Key Vault Secrets User role — no client secrets ever stored anywhere.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--purple)"></span> Workload Identity Federation — Modern Pipeline Auth</div>
+    <div class="panel-body">
+        <div class="two-col">
+            <div>
+                <p><span class="key-term">Workload Identity Federation</span> (WIF) = authenticate from a pipeline to Azure using <strong>OIDC tokens</strong> — no secrets, no certificates, nothing to rotate.</p>
+                <div class="flow-row">
+                    <div class="flow-box" style="border-color:var(--blue)">GitHub Actions<br><span class="subtle">or Azure DevOps</span></div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box" style="border-color:var(--orange)">OIDC Token<br><span class="subtle">short-lived JWT</span></div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box" style="border-color:var(--green)">Azure AD<br><span class="subtle">exchange for access token</span></div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box" style="border-color:var(--blue)">Azure Resource</div>
+                </div>
+                <ul style="margin-top:10px">
+                    <li>No client secrets in pipeline variables</li>
+                    <li>Token is short-lived (&lt; 1 hour) — auto-expires</li>
+                    <li>Trust is configured at the App Registration in Azure AD</li>
+                </ul>
+            </div>
+            <div>
+                <div class="callout exam"><span class="ci">🎯</span><div>WIF is now the <strong>recommended</strong> way to authenticate Azure DevOps pipelines and GitHub Actions to Azure. Service connections in Azure DevOps support "Workload Identity Federation" as the auth type.</div></div>
+                <div class="code-block"># GitHub Actions — OIDC to Azure
+- uses: azure/login@v2
+  with:
+    client-id: ${{ secrets.AZURE_CLIENT_ID }}
+    tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+    subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+# No client secret needed!</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> Azure DevOps Service Connections</div>
+    <div class="panel-body">
+        <p><span class="key-term">Service Connections</span> = authenticated connections from Azure DevOps to external services, stored securely at project or org level.</p>
+        <div class="three-col">
+            <div class="tool-card">
+                <h3>☁️ Azure Resource Manager</h3>
+                <p>Auth to Azure subscriptions. Supports Workload Identity Federation (recommended), Service Principal + secret, or Managed Identity.</p>
+            </div>
+            <div class="tool-card">
+                <h3>🐙 GitHub</h3>
+                <p>Auth to GitHub repos for pipeline triggers, checkout, or package publishing. Uses PAT or OAuth App.</p>
+            </div>
+            <div class="tool-card">
+                <h3>🐳 Docker Registry</h3>
+                <p>Push/pull container images. Supports Docker Hub, Azure Container Registry (ACR), and any generic v2 registry.</p>
+            </div>
+        </div>
+        <div class="callout exam"><span class="ci">🎯</span><div>Service connections can be scoped to specific resource groups or subscriptions — <strong>principle of least privilege</strong>. Never use a subscription-owner service connection when only one RG needs access.</div></div>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--yellow)"></span> Flash Cards — M05 Identity</div>
+    <div class="panel-body">
+        <button class="reveal-all-btn" onclick="revealAll('fc-m05')">Reveal All Answers</button>
+        <div class="flash-grid" id="fc-m05">
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Service Principal vs Managed Identity — when to use each?</div>
+                <div class="a">Service Principal: cross-tenant, external services, legacy. Managed Identity: Azure-to-Azure, no credential management. MI = preferred when possible — zero secrets.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">System-assigned vs user-assigned Managed Identity?</div>
+                <div class="a">System-assigned: tied to one resource, deleted with it. User-assigned: standalone resource, sharable across multiple resources. Use user-assigned for shared identity needs.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What is Workload Identity Federation?</div>
+                <div class="a">OIDC-based auth for pipelines — exchange a short-lived JWT token from the pipeline for an Azure access token. No client secrets. Now the recommended service connection type.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What is a Service Connection in Azure DevOps?</div>
+                <div class="a">A saved, authenticated connection to an external service (Azure, GitHub, Docker, etc.) stored securely in Azure DevOps. Used by pipeline tasks to authenticate without embedding credentials in YAML.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     M06 — Manage Application Configuration Data
+═══════════════════════════════════════════ -->
+<div id="m06" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">⚙️</span>
+    <div>
+        <div class="lp-title">LP4 — Implement a Secure Continuous Deployment using Azure Pipelines</div>
+        <div class="lp-sub">Module 6: Manage Application Configuration Data</div>
+    </div>
+</div>
+
+<div class="callout exam"><span class="ci">🎯</span><div><strong>EXAM FOCUS:</strong> Azure App Configuration vs Azure Key Vault — know what each stores and when to use which. Know Key Vault <strong>soft-delete + purge protection</strong>. Know App Configuration <strong>labels</strong>, <strong>snapshots</strong>, and Key Vault <strong>references</strong>.</div></div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> Azure App Configuration</div>
+    <div class="panel-body">
+        <p><span class="key-term">Azure App Configuration</span> = centralized, managed service for app settings and feature flags.</p>
+        <ul>
+            <li><strong>Key-value pairs</strong> with optional labels (dev, staging, prod, region)</li>
+            <li><strong>Feature flags</strong> — built-in management with targeting, rollout %</li>
+            <li><strong>Key Vault references</strong> — store a reference to a KV secret (not the secret itself)</li>
+            <li><strong>Snapshots</strong> — point-in-time copy of configuration for rollbacks</li>
+            <li><strong>Change notifications</strong> — push config changes to apps without restart</li>
+            <li>Hierarchical keys: <code>App:Database:ConnectionString</code></li>
+        </ul>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Labels</strong> = variant selector. Same key, different labels = different values per environment. <code>ConnectionString</code> with label <code>dev</code> → dev DB. Same key with label <code>prod</code> → prod DB. One config store, multiple environments.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> Azure Key Vault</div>
+    <div class="panel-body">
+        <p><span class="key-term">Azure Key Vault</span> = secure storage for secrets, keys, and certificates. <strong>Not a config store</strong> — a secrets store.</p>
+        <ul>
+            <li><strong>Secrets</strong>: connection strings, passwords, API keys</li>
+            <li><strong>Keys</strong>: cryptographic keys for encryption operations (HSM-backed optional)</li>
+            <li><strong>Certificates</strong>: SSL/TLS certificate lifecycle management</li>
+        </ul>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Soft Delete</strong> = deleted vault/secret moved to "deleted" state for retention period (7-90 days). Can be recovered. <strong>Purge Protection</strong> = even after soft-delete, cannot be permanently deleted until retention expires — even by admins. Enable both for production Key Vaults.</div></div>
+        <div class="callout danger"><span class="ci">🚨</span><div>Purge protection + soft delete = your last line of defense against accidental or malicious Key Vault deletion. Without purge protection, anyone with delete permissions can permanently destroy a vault.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> App Configuration vs Key Vault — When to Use Which</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Store</th><th>What to Put Here</th><th>What NOT to Put Here</th></tr>
+            <tr><td><span class="badge blue">App Configuration</span></td><td>Feature flags, app settings, environment labels, non-sensitive config values, Key Vault references</td><td>Passwords, connection strings, API keys, certificates</td></tr>
+            <tr><td><span class="badge orange">Key Vault</span></td><td>Secrets (passwords, connection strings, API keys), encryption keys, TLS certificates</td><td>Non-sensitive app settings, feature flags, UI config</td></tr>
+        </table>
+        <div class="callout tip"><span class="ci">💡</span><div><strong>Best practice pattern:</strong> Store all config in App Configuration. For sensitive values, store a <strong>Key Vault reference</strong> in App Configuration — it just holds a pointer (URI) to the actual secret in Key Vault. App fetches secret at runtime via the reference. One place to look, secure storage for secrets.</div></div>
+    </div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--purple)"></span> Key Vault Access — Policies vs RBAC</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Model</th><th>How It Works</th><th>Recommendation</th></tr>
+            <tr><td><span class="badge blue">Access Policies</span></td><td>Vault-level permission model. Grant identities get/set/list/delete on secrets/keys/certs separately.</td><td>Legacy. Fine-grained but harder to manage at scale.</td></tr>
+            <tr><td><span class="badge success">Azure RBAC</span></td><td>Standard Azure role assignments. Built-in roles: Key Vault Reader, Secrets User, Secrets Officer, Administrator.</td><td>✅ Recommended. Consistent with rest of Azure RBAC.</td></tr>
+        </table>
+        <div class="callout exam"><span class="ci">🎯</span><div>Key Vault RBAC model = <strong>Key Vault Secrets User</strong> (read secrets only) vs <strong>Key Vault Secrets Officer</strong> (create/update/delete). Pipelines should get <strong>Secrets User</strong> — read only, no write.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--red)"></span> Variable Groups in Azure Pipelines</div>
+    <div class="panel-body">
+        <p><span class="key-term">Variable Groups</span> = named sets of variables reusable across pipelines.</p>
+        <ul>
+            <li>Stored in Azure DevOps Library</li>
+            <li>Link a variable group to a Key Vault — sync secrets automatically at pipeline run time</li>
+            <li>Mark variables as <strong>secret</strong> — masked in logs, not passed between stages by default</li>
+            <li>Reference in YAML: <code>group: MyVariableGroup</code></li>
+        </ul>
+        <div class="code-block">variables:
+  - group: Production-Secrets   # links to Key Vault
+
+steps:
+  - script: echo "Connecting to DB..."
+    env:
+      DB_CONN: $(SqlConnectionString)  # fetched from KV</div>
+        <div class="callout exam"><span class="ci">🎯</span><div>Variable groups linked to Key Vault <strong>require a service connection</strong> with access to the vault. The pipeline identity needs at least <strong>Key Vault Secrets User</strong> role on the vault.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--yellow)"></span> Flash Cards — M06 Config Management</div>
+    <div class="panel-body">
+        <button class="reveal-all-btn" onclick="revealAll('fc-m06')">Reveal All Answers</button>
+        <div class="flash-grid" id="fc-m06">
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">App Configuration vs Key Vault — what does each store?</div>
+                <div class="a">App Config = non-sensitive settings, feature flags, labels, Key Vault references. Key Vault = secrets (passwords, API keys), encryption keys, certificates.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What are App Configuration labels used for?</div>
+                <div class="a">Variant selector — same key, different values per label. e.g., ConnectionString with label=dev → dev DB; label=prod → prod DB. One store, multiple environments.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Key Vault soft-delete vs purge protection?</div>
+                <div class="a">Soft-delete = deleted items recoverable for 7-90 days. Purge protection = even during retention period, permanent deletion is blocked for everyone. Both = accidental deletion safety net.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What is a Key Vault reference in App Configuration?</div>
+                <div class="a">A config value that holds a URI pointer to a Key Vault secret — not the secret value itself. App Config stores the pointer; app fetches actual secret from Key Vault at runtime.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     EXAM TIPS
+═══════════════════════════════════════════ -->
+<div id="exam" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🎯</span>
+    <div>
+        <div class="lp-title">LP4 — Exam Prep</div>
+        <div class="lp-sub">Traps, scenario matching, and must-memorize facts</div>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--red)"></span> LP4 Exam Traps</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Trap Question</th><th>Correct Answer</th></tr>
+            <tr><td>"Users should not be affected at all by bugs in the new version" → which pattern?</td><td><strong>Dark Launch</strong> — users never see the new code's output. Not canary (users experience the new version).</td></tr>
+            <tr><td>"Compare two UI variants to improve conversion rate" → which pattern?</td><td><strong>A/B Testing</strong>. Canary is for stability validation, not UX experiments.</td></tr>
+            <tr><td>"Deploy to production at 2am, enable for users at 9am — no new deploy" → how?</td><td><strong>Feature Toggle (Release Toggle)</strong>. Deploy with flag off, toggle on when ready.</td></tr>
+            <tr><td>"App setting must stay with the staging slot during a swap" → which setting type?</td><td><strong>Sticky setting (slot setting)</strong>. Mark as "slot setting" → it doesn't swap to production.</td></tr>
+            <tr><td>"Pipeline needs Azure access — no credentials to store or rotate" → what to use?</td><td><strong>Workload Identity Federation (OIDC)</strong> or <strong>Managed Identity</strong>. Not service principal + secret.</td></tr>
+            <tr><td>"Prevent permanent deletion of Key Vault for 30 days even by admins" → which feature?</td><td><strong>Purge Protection</strong>. Soft-delete alone allows purge by admins. Purge protection blocks it.</td></tr>
+            <tr><td>"Store feature flags centrally in Azure" → which service?</td><td><strong>Azure App Configuration</strong>. Not Key Vault (secrets only). Not App Settings (local, not centralized).</td></tr>
+            <tr><td>"Same config key, different value per environment" → App Config feature?</td><td><strong>Labels</strong>. dev/staging/prod labels on the same key = different values per environment.</td></tr>
+        </table>
+    </div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> Scenario → Pattern Quick Reference</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Scenario</th><th>Pattern</th></tr>
+            <tr><td>Zero-downtime, instant rollback</td><td>Blue-Green (App Service Slots)</td></tr>
+            <tr><td>Test stability with 5% of real traffic</td><td>Canary Release</td></tr>
+            <tr><td>Ship code hidden, enable later</td><td>Release Toggle (Feature Flag)</td></tr>
+            <tr><td>Kill switch for a degraded feature</td><td>Ops Toggle</td></tr>
+            <tr><td>Test which CTA button converts better</td><td>A/B Test + Experiment Toggle</td></tr>
+            <tr><td>Premium users only see new feature</td><td>Permission Toggle</td></tr>
+            <tr><td>Run new code silently on all traffic</td><td>Dark Launch</td></tr>
+            <tr><td>Expand from 5% → 25% → 100% with gates</td><td>Progressive Exposure / Ring Deployment</td></tr>
+            <tr><td>Azure pipeline auth without secrets</td><td>Workload Identity Federation (OIDC)</td></tr>
+            <tr><td>App reads secrets at runtime, no embed</td><td>Key Vault + Managed Identity</td></tr>
+            <tr><td>Centralize feature flags + config</td><td>Azure App Configuration</td></tr>
+        </table>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--purple)"></span> Must-Memorize Facts</div>
+    <div class="panel-body">
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Deploy ≠ Release.</strong> Deploy = technical act (code to env). Release = business act (visible to users). Feature flags decouple them.</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>4 toggle types:</strong> Release (ship hidden), Ops (kill switch), Experiment (A/B), Permission (user segment).</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Slot sticky settings</strong> stay with the slot — don't swap. Non-sticky settings DO swap with the code.</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Canary = users see new version. Dark Launch = users do NOT see new version output.</strong></div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Managed Identity = no credentials.</strong> System-assigned tied to one resource. User-assigned sharable across resources.</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Workload Identity Federation</strong> = OIDC. Recommended service connection type. No client secret anywhere.</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>App Config labels</strong> = same key, different values per environment. One store for all envs.</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Purge Protection ≠ Soft Delete.</strong> Soft delete = recoverable deletion. Purge protection = blocks permanent deletion during retention period, even for admins.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--yellow)"></span> Master Flash Cards — LP4</div>
+    <div class="panel-body">
+        <button class="reveal-all-btn" onclick="revealAll('fc-master')">Reveal All Answers</button>
+        <div class="flash-grid" id="fc-master">
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What makes blue-green rollback "instant"?</div>
+                <div class="a">The old version stays warm in the idle slot/environment the whole time. Rollback = swap back. No rebuild, no redeployment — traffic just re-routes to the already-running old version.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Name all 4 feature toggle types and their lifetimes.</div>
+                <div class="a">Release (short-lived), Ops / kill switch (long-lived), Experiment / A/B (short-lived), Permission / user segment (long-lived).</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What is toggle debt?</div>
+                <div class="a">Accumulation of old, unused feature flags never cleaned up. Each active flag = a code branch = test complexity. 50 stale flags = exponential test matrix. Set expiry dates and remove after rollout.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Workload Identity Federation vs Service Principal + secret?</div>
+                <div class="a">WIF = OIDC token exchange, no secret stored anywhere, recommended. SP + secret = client secret must be stored, rotated, protected. WIF is better for all new Azure DevOps service connections.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What is a Key Vault reference in App Configuration?</div>
+                <div class="a">A config entry that holds a URI to a Key Vault secret — not the secret itself. App Config stores the pointer; app resolves actual value from Key Vault at runtime via managed identity.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Dark launch vs Canary — which has zero user impact?</div>
+                <div class="a">Dark launch. New code runs but output is never shown to users. Canary exposes a % of users to the actual new experience — they can see/feel bugs. Dark = shadow mode.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+function showTab(id){
+    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.wf-tab').forEach(t=>t.classList.remove('active'));
+    const el=document.getElementById(id);
+    if(el) el.classList.add('active');
+    document.querySelectorAll('.wf-tab').forEach(t=>{
+        if(t.getAttribute('onclick')===`showTab('${id}')`) t.classList.add('active');
+    });
+}
+function revealAll(gridId){
+    document.querySelectorAll(`#${gridId} .flash-card`).forEach(c=>c.classList.add('revealed'));
+}
+</script>
+</body>
+</html>

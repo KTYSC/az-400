@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LP1 — Enterprise DevOps | AZ-400</title>
+    <style>
+        :root{
+            --bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:#30363d;
+            --text:#e6edf3;--muted:#8b949e;
+            --green:#3fb950;--blue:#58a6ff;--red:#f85149;--yellow:#d29922;
+            --orange:#e3b341;--purple:#bc8cff;--pink:#f778ba;--teal:#39d353;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:var(--bg);color:var(--text);font-family:'Cascadia Code','Fira Code',monospace,system-ui;line-height:1.6;font-size:14px}
+        nav{position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;padding:10px 16px;z-index:100;overflow-x:auto;gap:10px}
+        .nav-logo{display:flex;align-items:center;gap:8px;font-weight:bold;font-size:14px;flex-shrink:0;white-space:nowrap}
+        .wf-tabs{display:flex;gap:4px;flex-wrap:wrap}
+        .wf-tab{background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 12px;cursor:pointer;border-radius:6px;font-family:inherit;transition:.2s;font-size:11px;white-space:nowrap}
+        .wf-tab:hover{color:var(--text);background:var(--surface2)}
+        .wf-tab.active{color:var(--blue);border-color:var(--blue);background:rgba(88,166,255,.1)}
+        .container{max-width:1200px;margin:0 auto;padding:20px}
+        .tab-content{display:none}.tab-content.active{display:block}
+        .panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px}
+        .panel-header{background:var(--surface2);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:8px;font-weight:bold;font-size:13px}
+        .ph-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+        .panel-body{padding:16px}
+        .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+        .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+        .callout{background:var(--surface);border-left:4px solid var(--blue);padding:12px 16px;margin-bottom:12px;border-radius:4px;display:flex;gap:12px;align-items:flex-start;font-size:13px}
+        .callout.warn{border-left-color:var(--yellow)}
+        .callout.success{border-left-color:var(--green)}
+        .callout.danger{border-left-color:var(--red)}
+        .callout.tip{border-left-color:var(--purple)}
+        .callout.exam{border-left-color:var(--orange);background:rgba(227,179,65,.06)}
+        .ci{font-size:18px;flex-shrink:0}
+        .comparison-table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:12px}
+        .comparison-table th{background:var(--surface2);color:var(--text);padding:10px 12px;text-align:left;border:1px solid var(--border);font-weight:bold}
+        .comparison-table td{padding:10px 12px;border:1px solid var(--border);background:var(--surface)}
+        .comparison-table tr:nth-child(even) td{background:var(--surface2)}
+        .badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:bold;margin-right:4px;margin-bottom:2px}
+        .badge.success{background:rgba(63,185,80,.2);color:var(--green)}
+        .badge.warning{background:rgba(210,153,34,.2);color:var(--yellow)}
+        .badge.error{background:rgba(248,81,73,.2);color:var(--red)}
+        .badge.blue{background:rgba(88,166,255,.2);color:var(--blue)}
+        .badge.purple{background:rgba(188,140,255,.2);color:var(--purple)}
+        .badge.orange{background:rgba(227,179,65,.2);color:var(--orange)}
+        .badge.teal{background:rgba(57,211,83,.15);color:var(--teal)}
+        .badge.pink{background:rgba(247,120,186,.2);color:var(--pink)}
+        .code-block{background:var(--surface2);border:1px solid var(--border);padding:12px;border-radius:6px;overflow-x:auto;margin-bottom:12px;color:var(--blue);font-family:'Cascadia Code',monospace;font-size:12px;white-space:pre}
+        .terminal{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px}
+        .tbar{background:var(--surface2);border-bottom:1px solid var(--border);padding:8px 12px;display:flex;align-items:center;gap:6px}
+        .td{width:12px;height:12px;border-radius:50%}
+        .tlabel{margin-left:auto;font-size:11px;color:var(--muted)}
+        .tbody{padding:12px;font-family:'Cascadia Code',monospace;font-size:12px}
+        .tc{color:var(--green);margin-bottom:4px;white-space:pre-wrap}
+        .tc::before{content:"$ ";color:var(--green);font-weight:bold}
+        .to{color:var(--muted);margin-bottom:4px;white-space:pre-wrap}
+        .tok{color:var(--green);margin-bottom:4px}
+        .do-dont{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+        .do-box{border-left:4px solid var(--green);background:var(--surface);padding:12px 16px;border-radius:4px}
+        .dont-box{border-left:4px solid var(--red);background:var(--surface);padding:12px 16px;border-radius:4px}
+        .do-box::before{content:"✓ DO: ";color:var(--green);font-weight:bold;display:block;margin-bottom:6px;font-size:12px}
+        .dont-box::before{content:"✗ DON'T: ";color:var(--red);font-weight:bold;display:block;margin-bottom:6px;font-size:12px}
+        .tool-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;transition:.2s}
+        .tool-card:hover{border-color:var(--blue);transform:translateY(-2px)}
+        .tool-card h3{color:var(--blue);margin-bottom:6px;font-size:13px}
+        .tool-card p{color:var(--muted);font-size:12px;line-height:1.5}
+        .flow-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+        .flow-box{background:var(--surface2);border:1px solid var(--border);padding:6px 12px;border-radius:6px;font-size:12px}
+        .flow-arrow{color:var(--muted);font-size:16px}
+        .key-term{color:var(--orange);font-weight:bold}
+        .highlight{color:var(--green)}
+        .subtle{color:var(--muted);font-size:11px}
+        .flash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:16px}
+        .flash-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;cursor:pointer;transition:.2s}
+        .flash-card:hover{border-color:var(--purple);transform:translateY(-2px)}
+        .flash-card .q{color:var(--blue);font-size:12px;margin-bottom:8px;font-weight:bold}
+        .flash-card .a{color:var(--green);font-size:12px;display:none}
+        .flash-card.revealed .a{display:block}
+        .flash-card.revealed .q{color:var(--muted)}
+        .flash-hint{color:var(--muted);font-size:11px;margin-top:6px}
+        .reveal-all-btn{background:rgba(188,140,255,.15);border:1px solid rgba(188,140,255,.3);color:var(--purple);padding:8px 16px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:bold;margin-bottom:16px}
+        .reveal-all-btn:hover{background:rgba(188,140,255,.25)}
+        .lp-banner{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
+        .lp-banner .lp-icon{font-size:22px}
+        .lp-banner .lp-title{font-weight:bold;color:var(--text);margin-bottom:2px;font-size:13px}
+        .lp-banner .lp-sub{color:var(--muted);font-size:12px}
+        .dora-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+        .dora-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px}
+        .dora-card .metric{font-size:13px;font-weight:bold;margin-bottom:4px}
+        .dora-card .desc{color:var(--muted);font-size:12px;margin-bottom:6px}
+        .dora-card .elite{color:var(--green);font-size:11px}
+        h2{font-size:16px;color:var(--text);margin-bottom:12px}
+        h3{font-size:13px;color:var(--text);margin-bottom:8px}
+        p{font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.6}
+        li{font-size:13px;color:var(--muted);margin-left:16px;margin-bottom:4px;line-height:1.5}
+        ul{margin-bottom:10px}
+        @media(max-width:700px){.two-col,.three-col,.do-dont,.dora-grid{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="nav-logo">🌀 <span>LP1 — Enterprise DevOps | AZ-400</span></div>
+    <div class="wf-tabs">
+        <button class="wf-tab active" onclick="showTab('m01')">M01 DevOps Intro</button>
+        <button class="wf-tab" onclick="showTab('m02')">M02 Agile Planning</button>
+        <button class="wf-tab" onclick="showTab('m03')">M03 Branch Strategy</button>
+        <button class="wf-tab" onclick="showTab('m04')">M04 Pull Requests</button>
+        <button class="wf-tab" onclick="showTab('m05')">M05 Git Hooks</button>
+        <button class="wf-tab" onclick="showTab('m06')">M06 Inner Source</button>
+        <button class="wf-tab" onclick="showTab('m07')">M07 Repositories</button>
+        <button class="wf-tab" onclick="showTab('m08')">M08 Technical Debt</button>
+        <button class="wf-tab" onclick="showTab('exam')">🎯 Exam Tips</button>
+    </div>
+</nav>
+
+<div class="container">
+
+<!-- ═══════ M01 — Introduction to DevOps ═══════ -->
+<div id="m01" class="tab-content active">
+<div class="lp-banner">
+    <span class="lp-icon">🌀</span>
+    <div>
+        <div class="lp-title">LP1 — AZ-400: Implement Development for Enterprise DevOps</div>
+        <div class="lp-sub">Module 1: Introduction to DevOps</div>
+    </div>
+</div>
+
+<div class="callout exam"><span class="ci">🎯</span><div><strong>EXAM WEIGHT:</strong> Processes &amp; Communications = 11% of exam. LP1 is foundational — DevOps definition, DORA metrics, and Agile practices are recurring themes across all exam domains.</div></div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> What is DevOps?</div>
+    <div class="panel-body">
+        <p><span class="key-term">DevOps</span> = the union of people, process, and products to enable the <strong>continuous delivery of value</strong> to end users.</p>
+        <p>It is NOT just tools. The cultural and process changes matter as much as the technology.</p>
+        <div class="flow-row">
+            <div class="flow-box" style="border-color:var(--blue)">Plan</div><div class="flow-arrow">→</div>
+            <div class="flow-box">Code</div><div class="flow-arrow">→</div>
+            <div class="flow-box">Build</div><div class="flow-arrow">→</div>
+            <div class="flow-box">Test</div><div class="flow-arrow">→</div>
+            <div class="flow-box" style="border-color:var(--orange)">Release</div><div class="flow-arrow">→</div>
+            <div class="flow-box">Deploy</div><div class="flow-arrow">→</div>
+            <div class="flow-box">Operate</div><div class="flow-arrow">→</div>
+            <div class="flow-box" style="border-color:var(--green)">Monitor</div>
+        </div>
+        <p style="margin-top:8px;font-size:12px;color:var(--muted)">↑ Continuous loop — feedback from Monitor flows back into Plan</p>
+        <div class="callout exam"><span class="ci">🎯</span><div>The exam definition: DevOps = <strong>people + process + products</strong>. Not just CI/CD tools. Culture and collaboration are core — breaking down silos between Dev and Ops teams.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> CALMS Framework</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Letter</th><th>Pillar</th><th>Meaning</th></tr>
+            <tr><td><span class="badge blue">C</span></td><td>Culture</td><td>Shared responsibility, blame-free, collaboration between Dev &amp; Ops</td></tr>
+            <tr><td><span class="badge orange">A</span></td><td>Automation</td><td>Automate repetitive tasks — builds, tests, deployments, infra</td></tr>
+            <tr><td><span class="badge success">L</span></td><td>Lean</td><td>Eliminate waste, limit WIP, optimize flow, continuous improvement</td></tr>
+            <tr><td><span class="badge purple">M</span></td><td>Measurement</td><td>Data-driven decisions — measure everything, use metrics to improve</td></tr>
+            <tr><td><span class="badge warning">S</span></td><td>Sharing</td><td>Share knowledge, tools, and processes across teams (inner source)</td></tr>
+        </table>
+        <div class="callout tip"><span class="ci">💡</span><div>CALMS is a maturity model. Most teams nail Automation early. Culture is the hardest — it requires trust, psychological safety, and leadership buy-in. Tools alone never fix a broken culture.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> DORA Metrics — The 4 Key DevOps Measures</div>
+    <div class="panel-body">
+        <p><span class="key-term">DORA</span> (DevOps Research and Assessment) identified 4 metrics that predict software delivery performance:</p>
+        <div class="dora-grid">
+            <div class="dora-card">
+                <div class="metric" style="color:var(--blue)">📦 Deployment Frequency</div>
+                <div class="desc">How often you deploy to production. Measures throughput.</div>
+                <div class="elite">Elite: Multiple deploys per day</div>
+            </div>
+            <div class="dora-card">
+                <div class="metric" style="color:var(--green)">⏱️ Lead Time for Changes</div>
+                <div class="desc">Time from commit to running in production. Measures speed.</div>
+                <div class="elite">Elite: Less than 1 hour</div>
+            </div>
+            <div class="dora-card">
+                <div class="metric" style="color:var(--orange)">🔧 Mean Time to Restore (MTTR)</div>
+                <div class="desc">Time to recover from a production incident. Measures reliability.</div>
+                <div class="elite">Elite: Less than 1 hour</div>
+            </div>
+            <div class="dora-card">
+                <div class="metric" style="color:var(--red)">🐛 Change Failure Rate</div>
+                <div class="desc">% of deployments that cause a production failure. Measures quality.</div>
+                <div class="elite">Elite: 0–15%</div>
+            </div>
+        </div>
+        <div class="callout exam"><span class="ci">🎯</span><div>Deployment Frequency + Lead Time = <strong>throughput/speed</strong> metrics. MTTR + Change Failure Rate = <strong>stability/quality</strong> metrics. Elite teams excel at BOTH — speed AND stability are not a trade-off with DevOps.</div></div>
+    </div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--purple)"></span> Waterfall vs Agile vs DevOps</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Model</th><th>Delivery</th><th>Feedback</th><th>Change</th></tr>
+            <tr><td><span class="badge error">Waterfall</span></td><td>One big release, months/years</td><td>At the very end</td><td>Expensive, resisted</td></tr>
+            <tr><td><span class="badge warning">Agile</span></td><td>Iterative sprints, weeks</td><td>End of each sprint</td><td>Embraced in backlog</td></tr>
+            <tr><td><span class="badge success">DevOps</span></td><td>Continuous, hours/days</td><td>Real-time production data</td><td>Automated, low risk</td></tr>
+        </table>
+        <div class="callout tip"><span class="ci">💡</span><div>DevOps doesn't replace Agile — it extends it. Agile improved planning and collaboration. DevOps extends that into deployment and operations with automation and monitoring.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--red)"></span> DevOps Key Practices</div>
+    <div class="panel-body">
+        <ul>
+            <li>🔄 <strong>Continuous Integration (CI)</strong>: merge code frequently, automated build + test on every commit</li>
+            <li>🚀 <strong>Continuous Delivery (CD)</strong>: every build is potentially deployable to production</li>
+            <li>🏗️ <strong>Infrastructure as Code (IaC)</strong>: manage infra via code, version-controlled</li>
+            <li>📊 <strong>Continuous Monitoring</strong>: observability in production, telemetry-driven decisions</li>
+            <li>🧪 <strong>Automated Testing</strong>: unit, integration, and e2e tests in the pipeline</li>
+            <li>🔐 <strong>DevSecOps</strong>: security integrated throughout, not bolted on</li>
+            <li>📋 <strong>Agile Planning</strong>: backlog, sprints, retrospectives</li>
+        </ul>
+    </div>
+</div>
+</div>
+</div>
+
+<!-- ═══════ M02 — Agile Planning ═══════ -->
+<div id="m02" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">📋</span>
+    <div>
+        <div class="lp-title">LP1 — AZ-400: Implement Development for Enterprise DevOps</div>
+        <div class="lp-sub">Module 2: Plan Agile with GitHub Projects and Azure Boards</div>
+    </div>
+</div>
+
+<div class="callout exam"><span class="ci">🎯</span><div><strong>EXAM FOCUS:</strong> Know the Azure Boards work item hierarchy. Know what a burndown chart vs velocity chart shows. Know GitHub Projects vs Azure Boards positioning.</div></div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> Azure Boards — Work Item Hierarchy</div>
+    <div class="panel-body">
+        <div class="flow-row">
+            <div class="flow-box" style="border-color:var(--purple);padding:8px 16px">Epic<br><span class="subtle">Large body of work, months</span></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box" style="border-color:var(--blue);padding:8px 16px">Feature<br><span class="subtle">Deliverable capability</span></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box" style="border-color:var(--green);padding:8px 16px">User Story<br><span class="subtle">User-facing requirement</span></div>
+        </div>
+        <div class="flow-row" style="margin-top:8px">
+            <div class="flow-box" style="border-color:var(--orange)">Task<br><span class="subtle">Hours of work</span></div>
+            <div class="flow-arrow">and</div>
+            <div class="flow-box" style="border-color:var(--red)">Bug<br><span class="subtle">Defect to fix</span></div>
+        </div>
+        <div class="callout exam"><span class="ci">🎯</span><div>Hierarchy: <strong>Epic → Feature → User Story → Task/Bug</strong>. Epics span multiple sprints. Stories should fit within a sprint. Tasks are sub-items of stories — hours, not days.</div></div>
+        <p style="margin-top:6px">Work item types vary by process template: <span class="badge blue">Agile</span> <span class="badge purple">Scrum</span> <span class="badge orange">CMMI</span></p>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> Azure Boards Views</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>View</th><th>Purpose</th><th>Best For</th></tr>
+            <tr><td><span class="badge blue">Boards</span></td><td>Kanban — columns by state (To Do / Active / Done)</td><td>Daily flow, WIP limits</td></tr>
+            <tr><td><span class="badge success">Backlogs</span></td><td>Ordered list of all work items by priority</td><td>Sprint planning, prioritization</td></tr>
+            <tr><td><span class="badge orange">Sprints</span></td><td>Sprint-specific board + taskboard + capacity</td><td>During-sprint work management</td></tr>
+            <tr><td><span class="badge purple">Queries</span></td><td>Custom filtered views of work items</td><td>Reporting, bulk updates</td></tr>
+            <tr><td><span class="badge warning">Analytics</span></td><td>Velocity, burndown, CFD charts</td><td>Team performance metrics</td></tr>
+        </table>
+    </div>
+</div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> Key Agile Charts</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Chart</th><th>Shows</th><th>What to Watch</th></tr>
+            <tr><td><span class="badge orange">Burndown</span></td><td>Remaining work vs time in sprint</td><td>Flat line = blocked. Rising line = scope added.</td></tr>
+            <tr><td><span class="badge blue">Velocity</span></td><td>Story points completed per sprint over time</td><td>Trend up = improving. Volatile = unstable team/process.</td></tr>
+            <tr><td><span class="badge purple">Cumulative Flow (CFD)</span></td><td>Items in each state over time</td><td>Widening band = bottleneck in that state.</td></tr>
+            <tr><td><span class="badge success">Burnup</span></td><td>Completed work + total scope over time</td><td>Scope creep visible as total line rises.</td></tr>
+        </table>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Burndown = remaining work going down to zero.</strong> Burnup = completed work going up to total. CFD = shows WHERE work is piling up (which column). Velocity = capacity planning for future sprints.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--purple)"></span> GitHub Projects vs Azure Boards</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Feature</th><th>GitHub Projects</th><th>Azure Boards</th></tr>
+            <tr><td>Work Item Hierarchy</td><td>Flexible (labels, custom fields)</td><td>Structured (Epic→Feature→Story→Task)</td></tr>
+            <tr><td>Sprint Planning</td><td>Basic (iterations)</td><td>Full sprint planning + capacity</td></tr>
+            <tr><td>Integration</td><td>Native with GitHub repos/PRs</td><td>Native with Azure Repos/Pipelines</td></tr>
+            <tr><td>Reporting</td><td>Basic charts</td><td>Rich analytics, velocity, CFD</td></tr>
+            <tr><td>Best for</td><td>GitHub-native teams, OSS projects</td><td>Enterprise, regulated environments</td></tr>
+        </table>
+        <div class="callout tip"><span class="ci">💡</span><div>You can connect GitHub repos to Azure Boards — get the PR/commit linking of GitHub with the planning depth of Azure Boards. Best of both worlds for hybrid teams.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--yellow)"></span> Flash Cards — M01 &amp; M02</div>
+    <div class="panel-body">
+        <button class="reveal-all-btn" onclick="revealAll('fc-m12')">Reveal All Answers</button>
+        <div class="flash-grid" id="fc-m12">
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Define DevOps in Microsoft's terms.</div>
+                <div class="a">The union of people, process, and products to enable the continuous delivery of value to end users. Not just tools — culture and process matter equally.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Name the 4 DORA metrics and what they measure.</div>
+                <div class="a">Deployment Frequency (throughput), Lead Time for Changes (speed), MTTR (reliability), Change Failure Rate (quality). Throughput + Stability = elite performance.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What does a widening band in a CFD chart indicate?</div>
+                <div class="a">A bottleneck — work is accumulating in that column/state faster than it's moving out. The widening band shows WHERE the blockage is in the workflow.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Azure Boards work item hierarchy — top to bottom?</div>
+                <div class="a">Epic → Feature → User Story → Task / Bug. Epics span multiple sprints. Stories fit in one sprint. Tasks are hours of work within a story.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════ M03 — Branch Strategies ═══════ -->
+<div id="m03" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🌿</span>
+    <div>
+        <div class="lp-title">LP1 — AZ-400: Implement Development for Enterprise DevOps</div>
+        <div class="lp-sub">Module 3: Design and Implement Branch Strategies and Workflows</div>
+    </div>
+</div>
+
+<div class="callout exam"><span class="ci">🎯</span><div><strong>EXAM FOCUS:</strong> Know trunk-based development vs Gitflow vs GitHub Flow trade-offs. Know Azure Repos branch policies — specifically what each policy enforces. Merge strategies: squash vs rebase vs merge commit.</div></div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> Branching Strategy Comparison</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Strategy</th><th>Branches</th><th>Release Cadence</th><th>Best For</th><th>Complexity</th></tr>
+            <tr><td><span class="badge success">Trunk-Based</span></td><td>main only (+ short-lived feature branches &lt;1 day)</td><td>Continuous / multiple/day</td><td>High-frequency CI/CD, mature teams</td><td>Low (with feature flags)</td></tr>
+            <tr><td><span class="badge blue">GitHub Flow</span></td><td>main + feature branches</td><td>Continuous (on merge)</td><td>Web apps, SaaS, frequent releases</td><td>Low</td></tr>
+            <tr><td><span class="badge warning">Gitflow</span></td><td>main, develop, feature, release, hotfix</td><td>Scheduled releases</td><td>Packaged software, versioned products</td><td>High</td></tr>
+            <tr><td><span class="badge orange">Release Flow</span></td><td>main + release/ branches</td><td>Scheduled (branch from main)</td><td>Microsoft's internal model, large teams</td><td>Medium</td></tr>
+        </table>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Trunk-based development</strong> is the approach used by elite DevOps performers. Short-lived branches (&lt; 1 day) merged to main. Requires strong CI, automated testing, and feature flags. Gitflow is for scheduled releases, not continuous delivery.</div></div>
+    </div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> Gitflow — Branch Types</div>
+    <div class="panel-body">
+        <ul>
+            <li><span class="key-term">main</span>: production-ready code only. Tags mark releases.</li>
+            <li><span class="key-term">develop</span>: integration branch for features. CI runs here.</li>
+            <li><span class="key-term">feature/</span>: branch off develop, merge back to develop when done.</li>
+            <li><span class="key-term">release/</span>: branch off develop when ready to release. Only bug fixes.</li>
+            <li><span class="key-term">hotfix/</span>: branch off main for urgent production fixes. Merge to both main AND develop.</li>
+        </ul>
+        <div class="callout warn"><span class="ci">⚠️</span><div>Gitflow gets complex fast. Long-lived branches = merge conflicts = pain. If you're doing CI/CD, Gitflow works against you. Use it only for products with versioned, scheduled releases.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> Merge Strategies</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Strategy</th><th>History</th><th>Use When</th></tr>
+            <tr><td><span class="badge blue">Merge Commit</span></td><td>Preserves all commits + adds merge commit</td><td>Full history needed, traceability important</td></tr>
+            <tr><td><span class="badge success">Squash Merge</span></td><td>All feature commits → 1 clean commit on main</td><td>Clean main history, messy feature branch WIP commits</td></tr>
+            <tr><td><span class="badge orange">Rebase</span></td><td>Replays commits on top of main, linear history</td><td>Clean linear history, no merge commits</td></tr>
+        </table>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Squash merge</strong> = one commit on main per feature. Clean history. <strong>Rebase</strong> = replays commits, linear history, rewrites SHA hashes — dangerous on shared branches. <strong>Never rebase public/shared branches.</strong></div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--purple)"></span> Azure Repos Branch Policies</div>
+    <div class="panel-body">
+        <div class="three-col">
+            <div class="tool-card">
+                <h3>👥 Minimum Reviewers</h3>
+                <p>Require N approvals before a PR can merge. Prevents self-merging. Can require fresh approval when new commits are pushed.</p>
+            </div>
+            <div class="tool-card">
+                <h3>✅ Build Validation</h3>
+                <p>Trigger a pipeline run on the PR. PR cannot merge if build fails. Enforces CI on every change.</p>
+            </div>
+            <div class="tool-card">
+                <h3>🔗 Work Item Linking</h3>
+                <p>Require at least one linked work item on the PR. Ensures every change traces back to a planned work item.</p>
+            </div>
+        </div>
+        <div class="three-col">
+            <div class="tool-card">
+                <h3>📝 Comment Resolution</h3>
+                <p>All PR comments must be resolved before merge. Prevents merging with unaddressed review feedback.</p>
+            </div>
+            <div class="tool-card">
+                <h3>🔒 Merge Strategy</h3>
+                <p>Enforce a specific merge strategy (squash, rebase, merge commit) — or allow the author to choose.</p>
+            </div>
+            <div class="tool-card">
+                <h3>🔄 Up-to-date Branch</h3>
+                <p>Require PR branch to be up to date with main before merging. Prevents merge-order issues.</p>
+            </div>
+        </div>
+        <div class="callout exam"><span class="ci">🎯</span><div>Branch policies are enforced even on repo admins (unless bypassed explicitly). <strong>Build validation</strong> is the policy that runs your CI pipeline on every PR — the most important policy for quality gates.</div></div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════ M04 — Pull Requests ═══════ -->
+<div id="m04" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🔀</span>
+    <div>
+        <div class="lp-title">LP1 — AZ-400: Implement Development for Enterprise DevOps</div>
+        <div class="lp-sub">Module 4: Collaborate with Pull Requests in Azure Repos</div>
+    </div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> Pull Request Workflow</div>
+    <div class="panel-body">
+        <div class="flow-row">
+            <div class="flow-box" style="border-color:var(--purple)">Create branch</div><div class="flow-arrow">→</div>
+            <div class="flow-box">Push commits</div><div class="flow-arrow">→</div>
+            <div class="flow-box" style="border-color:var(--blue)">Open PR</div>
+        </div>
+        <div class="flow-row" style="margin-top:4px">
+            <div class="flow-box">CI runs</div><div class="flow-arrow">→</div>
+            <div class="flow-box">Review &amp; comments</div><div class="flow-arrow">→</div>
+            <div class="flow-box">Address feedback</div>
+        </div>
+        <div class="flow-row" style="margin-top:4px">
+            <div class="flow-box" style="border-color:var(--green)">Approve</div><div class="flow-arrow">→</div>
+            <div class="flow-box" style="border-color:var(--green)">Merge to main</div>
+        </div>
+        <ul style="margin-top:10px">
+            <li><strong>Draft PR</strong>: mark as draft when work in progress — reviewers know not to review yet. Removes from active PR queue.</li>
+            <li><strong>PR template</strong>: auto-populate PR description with checklist (tests written, docs updated, breaking change?)</li>
+            <li><strong>Auto-complete</strong>: auto-merge once all policies pass — no manual click needed</li>
+        </ul>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> CODEOWNERS</div>
+    <div class="panel-body">
+        <p><span class="key-term">CODEOWNERS</span> file automatically assigns reviewers based on which files are changed in the PR.</p>
+        <div class="code-block"># GitHub: .github/CODEOWNERS
+# Format: path  @owner(s)
+
+*.js         @frontend-team
+/src/api/    @backend-team
+/docs/       @tech-writers
+*.bicep      @infra-team
+/security/   @security-team @lead-dev</div>
+        <div class="callout exam"><span class="ci">🎯</span><div>CODEOWNERS is a GitHub feature. In Azure DevOps, required reviewers per path are configured as branch policies. Both achieve the same goal — right person reviews right code.</div></div>
+        <div class="callout tip"><span class="ci">💡</span><div>Real world: CODEOWNERS prevents the "anyone can approve anything" anti-pattern. The security team is auto-added to any PR touching <code>/security/</code> — no one can forget to include them.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> Code Review Best Practices</div>
+    <div class="panel-body">
+        <div class="do-dont">
+            <div class="do-box">Review for logic, security, and maintainability — not just style. Use linters/formatters to automate style so reviews focus on what matters.</div>
+            <div class="dont-box">Request changes for purely personal preference ("I would have done it differently"). Be specific — explain WHY something should change.</div>
+        </div>
+        <div class="do-dont">
+            <div class="do-box">Keep PRs small — &lt;400 lines changed. Small PRs get better reviews, merge faster, and are easier to roll back.</div>
+            <div class="dont-box">Open a "monster PR" with 3,000 lines changed. Reviewers rubber-stamp large PRs — they can't meaningfully review them. Bugs hide in big PRs.</div>
+        </div>
+        <div class="callout tip"><span class="ci">💡</span><div>Research shows that review effectiveness drops sharply after 400 lines. Above 400 lines, defect detection rate falls from ~65% to &lt;20%. Small PRs are a quality strategy, not just a team preference.</div></div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════ M05 — Git Hooks ═══════ -->
+<div id="m05" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🪝</span>
+    <div>
+        <div class="lp-title">LP1 — AZ-400: Implement Development for Enterprise DevOps</div>
+        <div class="lp-sub">Module 5: Explore Git Hooks</div>
+    </div>
+</div>
+
+<div class="callout exam"><span class="ci">🎯</span><div><strong>EXAM FOCUS:</strong> Know client-side vs server-side hooks and their trigger points. Know that client-side hooks can be bypassed (--no-verify). Server-side hooks cannot be bypassed by the developer.</div></div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> Client-Side Hooks</div>
+    <div class="panel-body">
+        <p>Run on the developer's machine. Stored in <code>.git/hooks/</code> — NOT committed to the repo by default.</p>
+        <table class="comparison-table">
+            <tr><th>Hook</th><th>Triggers</th><th>Common Use</th></tr>
+            <tr><td><span class="badge blue">pre-commit</span></td><td>Before commit is created</td><td>Run linter, formatter, unit tests</td></tr>
+            <tr><td><span class="badge purple">commit-msg</span></td><td>After commit message entered</td><td>Validate message format (e.g., Conventional Commits)</td></tr>
+            <tr><td><span class="badge orange">pre-push</span></td><td>Before pushing to remote</td><td>Run full test suite, security scan</td></tr>
+            <tr><td><span class="badge success">post-commit</span></td><td>After commit created</td><td>Notifications, local logging</td></tr>
+            <tr><td><span class="badge warning">prepare-commit-msg</span></td><td>Before commit message editor opens</td><td>Auto-populate message template</td></tr>
+        </table>
+        <div class="callout warn"><span class="ci">⚠️</span><div>Client-side hooks can be <strong>bypassed</strong> with <code>git commit --no-verify</code>. Don't rely on them as security controls — use server-side hooks or pipeline checks for enforcement.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--red)"></span> Server-Side Hooks</div>
+    <div class="panel-body">
+        <p>Run on the Git server (Azure Repos, GitHub). <strong>Cannot be bypassed by the developer.</strong></p>
+        <table class="comparison-table">
+            <tr><th>Hook</th><th>Triggers</th><th>Common Use</th></tr>
+            <tr><td><span class="badge error">pre-receive</span></td><td>Before accepting any push</td><td>Reject commits with large files, enforce policies</td></tr>
+            <tr><td><span class="badge warning">update</span></td><td>Once per branch being updated</td><td>Branch-specific policies</td></tr>
+            <tr><td><span class="badge success">post-receive</span></td><td>After push fully processed</td><td>Notifications, CI trigger, deploy hooks</td></tr>
+        </table>
+        <div class="callout exam"><span class="ci">🎯</span><div>In Azure DevOps, server-side enforcement is done through <strong>branch policies</strong> and <strong>service hooks</strong> — not raw Git hooks. Azure DevOps Service Hooks trigger on events (push, PR created, build completed) and call external services.</div></div>
+        <div class="callout tip"><span class="ci">💡</span><div><strong>Husky</strong> = popular npm package to manage and share client-side hooks in a project. Hooks stored in <code>.husky/</code> and checked into the repo — solves the "hooks aren't shared" problem for JS/Node teams.</div></div>
+    </div>
+</div>
+</div>
+</div>
+
+<!-- ═══════ M06 — Inner Source ═══════ -->
+<div id="m06" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🤝</span>
+    <div>
+        <div class="lp-title">LP1 — AZ-400: Implement Development for Enterprise DevOps</div>
+        <div class="lp-sub">Module 6: Plan Foster Inner Source</div>
+    </div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> What is Inner Source?</div>
+    <div class="panel-body">
+        <p><span class="key-term">Inner Source</span> = applying open-source development practices within a private organization.</p>
+        <ul>
+            <li>Code is <strong>visible</strong> across all internal teams (not siloed per squad)</li>
+            <li>Anyone can submit PRs to improve shared components</li>
+            <li>Reduces duplicate work across teams</li>
+            <li>Spreads expertise and best practices organically</li>
+            <li>Creates a culture of collaboration, not ownership silos</li>
+        </ul>
+        <div class="callout exam"><span class="ci">🎯</span><div>Inner source is the "S" in CALMS (Sharing). It requires: discoverable repos, good documentation, welcoming contribution guides, and <strong>trusted committers</strong> — senior devs who own the quality of the shared component.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> Inner Source Requirements</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Element</th><th>Purpose</th></tr>
+            <tr><td><span class="badge blue">README.md</span></td><td>What the repo does, how to build, how to use it</td></tr>
+            <tr><td><span class="badge success">CONTRIBUTING.md</span></td><td>How to submit issues and PRs, coding standards</td></tr>
+            <tr><td><span class="badge orange">CODEOWNERS</span></td><td>Who reviews PRs — the trusted committers</td></tr>
+            <tr><td><span class="badge purple">CODE_OF_CONDUCT.md</span></td><td>Community behavior standards</td></tr>
+            <tr><td><span class="badge warning">Issue templates</span></td><td>Structured bug reports and feature requests</td></tr>
+        </table>
+        <div class="callout tip"><span class="ci">💡</span><div><strong>Trusted Committer</strong> = the gatekeeper of a shared repo. Reviews external PRs, maintains quality, mentors contributors. Critical role for inner source success — without it, shared repos become graveyards of unreviewed PRs.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> Forking Workflow for Inner Source</div>
+    <div class="panel-body">
+        <div class="two-col">
+            <div>
+                <p>For strict ownership scenarios — contributors fork the repo rather than pushing directly to branches:</p>
+                <div class="flow-row">
+                    <div class="flow-box" style="border-color:var(--blue)">Upstream (official) repo</div>
+                    <div class="flow-arrow">fork</div>
+                    <div class="flow-box" style="border-color:var(--orange)">Contributor's fork</div>
+                </div>
+                <div class="flow-row" style="margin-top:4px">
+                    <div class="flow-box">Code in fork</div>
+                    <div class="flow-arrow">PR →</div>
+                    <div class="flow-box" style="border-color:var(--green)">Upstream review &amp; merge</div>
+                </div>
+            </div>
+            <div>
+                <ul>
+                    <li>Contributors can't accidentally push to main upstream</li>
+                    <li>Trusted committers control what gets merged</li>
+                    <li>Full OSS workflow inside the company</li>
+                    <li>Azure DevOps and GitHub both support forking</li>
+                </ul>
+                <div class="callout exam"><span class="ci">🎯</span><div>Forking workflow ≠ branching workflow. Fork = your own copy of the repo. Branch = a divergence within the same repo. Forks used when contributor doesn't have write access to the source repo.</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════ M07 — Manage Repositories ═══════ -->
+<div id="m07" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🗄️</span>
+    <div>
+        <div class="lp-title">LP1 — AZ-400: Implement Development for Enterprise DevOps</div>
+        <div class="lp-sub">Module 7: Manage and Configure Repositories</div>
+    </div>
+</div>
+
+<div class="callout exam"><span class="ci">🎯</span><div><strong>EXAM FOCUS:</strong> Mono-repo vs multi-repo trade-offs. Git LFS use case. Azure Repos permissions model. Know when to use tags vs branches.</div></div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--blue)"></span> Mono-Repo vs Multi-Repo</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Aspect</th><th>Mono-Repo</th><th>Multi-Repo</th></tr>
+            <tr><td>Code visibility</td><td>All teams see everything</td><td>Teams own their repos</td></tr>
+            <tr><td>Cross-cutting refactors</td><td>✅ Easy — one commit changes all</td><td>❌ Hard — coordinate across repos</td></tr>
+            <tr><td>Independent deployments</td><td>⚠️ Needs build system intelligence</td><td>✅ Natural — each repo deploys independently</td></tr>
+            <tr><td>Tooling</td><td>Needs smart build tools (Nx, Bazel, Turborepo)</td><td>Standard Git tooling works fine</td></tr>
+            <tr><td>Used by</td><td>Google, Meta, Microsoft (Windows)</td><td>Most small-medium teams, microservices</td></tr>
+        </table>
+        <div class="callout exam"><span class="ci">🎯</span><div>Neither is universally better. Mono-repo wins for consistent tooling and atomic cross-cutting changes. Multi-repo wins for team autonomy and independent deployment cadence. The exam tests <strong>trade-offs</strong>, not a single right answer.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> Git LFS — Large File Storage</div>
+    <div class="panel-body">
+        <p><span class="key-term">Git LFS</span> stores large binary files outside the Git object store, replacing them with small pointer files in the repo.</p>
+        <ul>
+            <li>Use for: images, videos, audio, 3D models, ML model files, compiled binaries</li>
+            <li>Pointer file stays in repo (~134 bytes). Actual file in LFS store.</li>
+            <li>Git history stays fast — large files don't bloat clone/fetch</li>
+            <li>Requires: Git LFS client installed, LFS-enabled server (GitHub, Azure Repos both support it)</li>
+        </ul>
+        <div class="code-block"># Track all PNG files with LFS
+git lfs track "*.png"
+git add .gitattributes
+git add image.png
+git commit -m "Add image via LFS"</div>
+        <div class="callout exam"><span class="ci">🎯</span><div>"Team is experiencing slow clone times due to large binary files" → answer = <strong>Git LFS</strong>. It solves the repo bloat problem caused by checking in large binaries.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> Azure Repos Permissions</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Role</th><th>Can Do</th></tr>
+            <tr><td><span class="badge success">Reader</span></td><td>Clone, view code, create PRs (read-only)</td></tr>
+            <tr><td><span class="badge blue">Contributor</span></td><td>Push to branches, create branches, create PRs</td></tr>
+            <tr><td><span class="badge orange">Project Administrator</span></td><td>Manage branch policies, delete branches, bypass policies</td></tr>
+        </table>
+        <div class="callout tip"><span class="ci">💡</span><div>Branch policies protect main from direct pushes even for Contributors. A Contributor can't push directly to main if a branch policy requires a PR — they must go through the PR process.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--purple)"></span> Tags vs Branches</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Feature</th><th>Branch</th><th>Tag</th></tr>
+            <tr><td>Purpose</td><td>Active line of development</td><td>Mark a specific point in history</td></tr>
+            <tr><td>Moves forward?</td><td>Yes — advances with new commits</td><td>No — fixed pointer to one commit</td></tr>
+            <tr><td>Use for</td><td>Feature work, releases in progress</td><td>v1.0, v2.3.1, production releases</td></tr>
+        </table>
+        <div class="callout exam"><span class="ci">🎯</span><div>Tags mark <strong>immutable</strong> release points. <code>v1.0.0</code> always points to the same commit forever. Branches advance. Use tags to mark what went to production — the artifact pipeline can then reliably reference the exact commit.</div></div>
+    </div>
+</div>
+</div>
+</div>
+
+<!-- ═══════ M08 — Technical Debt ═══════ -->
+<div id="m08" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">⚖️</span>
+    <div>
+        <div class="lp-title">LP1 — AZ-400: Implement Development for Enterprise DevOps</div>
+        <div class="lp-sub">Module 8: Identify Technical Debt</div>
+    </div>
+</div>
+
+<div class="callout exam"><span class="ci">🎯</span><div><strong>EXAM FOCUS:</strong> SonarQube / SonarCloud as the primary code quality tool. Know what each rating (reliability, security, maintainability) measures. Know code coverage and its limits as a metric.</div></div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--red)"></span> What is Technical Debt?</div>
+    <div class="panel-body">
+        <p><span class="key-term">Technical debt</span> = the implied cost of rework caused by choosing an easy solution now instead of a better approach that would take longer.</p>
+        <table class="comparison-table">
+            <tr><th>Debt Type</th><th>Examples</th></tr>
+            <tr><td><span class="badge error">Code Debt</span></td><td>Duplicated code, poor naming, long methods, hardcoded values</td></tr>
+            <tr><td><span class="badge warning">Test Debt</span></td><td>Low code coverage, missing integration tests, flaky tests</td></tr>
+            <tr><td><span class="badge blue">Architecture Debt</span></td><td>Monolith that should be services, wrong DB choice, tight coupling</td></tr>
+            <tr><td><span class="badge purple">Documentation Debt</span></td><td>Outdated docs, no API docs, missing runbooks</td></tr>
+            <tr><td><span class="badge orange">Infra Debt</span></td><td>Old OS versions, unpatched dependencies, manual deployments</td></tr>
+        </table>
+        <div class="callout tip"><span class="ci">💡</span><div>Some debt is deliberate (time-to-market trade-off) and acceptable — IF you document it and pay it back. Unmanaged, accidental debt compounds and eventually paralyzes a team. Track it in your backlog like any other work.</div></div>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> SonarQube / SonarCloud</div>
+    <div class="panel-body">
+        <p><span class="key-term">SonarQube</span> (self-hosted) / <span class="key-term">SonarCloud</span> (cloud) = the industry-standard code quality analysis platform.</p>
+        <table class="comparison-table">
+            <tr><th>Rating</th><th>What It Measures</th><th>Scale</th></tr>
+            <tr><td><span class="badge error">Reliability</span></td><td>Bugs — code that will likely behave incorrectly</td><td>A–E (A = no bugs)</td></tr>
+            <tr><td><span class="badge warning">Security</span></td><td>Vulnerabilities — exploitable code weaknesses</td><td>A–E (A = no vulns)</td></tr>
+            <tr><td><span class="badge success">Maintainability</span></td><td>Code smells — debt ratio. Time to fix / dev time</td><td>A–E based on debt ratio</td></tr>
+        </table>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Quality Gate</strong> = SonarQube policy that blocks the build/PR if metrics fall below thresholds. e.g., "Fail if new code coverage &lt; 80% or Reliability Rating &lt; A". Quality Gates enforce code quality automatically in CI.</div></div>
+        <div class="callout tip"><span class="ci">💡</span><div><strong>Cognitive Complexity</strong> = SonarQube metric for how hard code is to understand (vs cyclomatic complexity which just counts branches). Lower = easier to read and maintain.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--green)"></span> Code Coverage — Metrics and Limits</div>
+    <div class="panel-body">
+        <div class="two-col">
+            <div>
+                <p><span class="key-term">Code coverage</span> = percentage of production code lines/branches executed by tests.</p>
+                <table class="comparison-table">
+                    <tr><th>Coverage Type</th><th>Measures</th></tr>
+                    <tr><td>Line Coverage</td><td>Which lines were executed</td></tr>
+                    <tr><td>Branch Coverage</td><td>Which code branches (if/else) were taken</td></tr>
+                    <tr><td>Function Coverage</td><td>Which functions were called</td></tr>
+                </table>
+            </div>
+            <div>
+                <div class="callout warn"><span class="ci">⚠️</span><div><strong>Coverage ≠ quality.</strong> 100% line coverage can still have zero assertions. A test that calls every function but never checks the output gives 100% coverage and zero bug detection. Coverage is a floor, not a ceiling.</div></div>
+                <div class="callout exam"><span class="ci">🎯</span><div>Industry target: 80% code coverage is a common minimum. But 80% meaningful coverage &gt; 100% coverage with no assertions. The exam tests the concept, not a specific number.</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--yellow)"></span> Flash Cards — M05 to M08</div>
+    <div class="panel-body">
+        <button class="reveal-all-btn" onclick="revealAll('fc-m58')">Reveal All Answers</button>
+        <div class="flash-grid" id="fc-m58">
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Client-side vs server-side Git hooks — which can be bypassed?</div>
+                <div class="a">Client-side (pre-commit, commit-msg, pre-push) can be bypassed with --no-verify. Server-side (pre-receive, update, post-receive) cannot be bypassed by the developer.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What problem does Git LFS solve?</div>
+                <div class="a">Large binary files bloating the Git repo — slow clones, huge disk usage. LFS stores binaries outside the object store; the repo holds pointer files. Solves performance issues from images, videos, ML models in repos.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What is a SonarQube Quality Gate?</div>
+                <div class="a">A policy that fails the build/PR if code quality metrics fall below thresholds (e.g., coverage &lt; 80%, Reliability &lt; A). Enforces code quality standards automatically in CI.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What is the Trusted Committer role in inner source?</div>
+                <div class="a">Senior developer who owns the shared repo — reviews external PRs, maintains quality, mentors contributors. Critical for inner source to work — without it, PRs pile up unreviewed.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Mono-repo key advantage vs multi-repo?</div>
+                <div class="a">Atomic cross-cutting changes — one commit can refactor across all services simultaneously. Also: consistent tooling, unified CI, easier dependency management. Tradeoff: needs smart build tools to avoid rebuilding everything.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ═══════ EXAM TIPS ═══════ -->
+<div id="exam" class="tab-content">
+<div class="lp-banner">
+    <span class="lp-icon">🎯</span>
+    <div>
+        <div class="lp-title">LP1 — Exam Prep</div>
+        <div class="lp-sub">Traps, scenario matching, and must-memorize facts</div>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--red)"></span> LP1 Exam Traps</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Trap Question</th><th>Correct Answer</th></tr>
+            <tr><td>"Which metric measures how quickly you recover from incidents?"</td><td><strong>MTTR</strong> (Mean Time to Restore). Not Change Failure Rate (that's quality), not Lead Time (that's speed).</td></tr>
+            <tr><td>"Team is experiencing slow git clone — large binary files are the cause"</td><td><strong>Git LFS</strong>. Store binaries outside the repo with pointer files.</td></tr>
+            <tr><td>"Enforce that every PR has a linked work item"</td><td><strong>Branch Policy: Work Item Linking</strong> in Azure Repos.</td></tr>
+            <tr><td>"Specific files in a repo must always be reviewed by a security team"</td><td><strong>CODEOWNERS</strong> (GitHub) or required reviewer branch policy scoped to file paths (Azure DevOps).</td></tr>
+            <tr><td>"Which branching strategy does NOT use long-lived branches?"</td><td><strong>Trunk-Based Development</strong>. All others use develop, release, or long-lived feature branches.</td></tr>
+            <tr><td>"Client-side git hook to enforce commit message format"</td><td><strong>commit-msg hook</strong>. Runs after user enters message, before commit is created.</td></tr>
+            <tr><td>"Code coverage is 90% but QA still finds many bugs"</td><td>Coverage ≠ quality. Tests exist but have <strong>no meaningful assertions</strong>. Fix: add assertion-heavy tests, not more coverage.</td></tr>
+            <tr><td>"All commits squashed into one before merging to main"</td><td><strong>Squash merge</strong> strategy. Enforced via branch policy merge strategy setting.</td></tr>
+        </table>
+    </div>
+</div>
+
+<div class="two-col">
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--orange)"></span> Scenario → Tool Quick Reference</div>
+    <div class="panel-body">
+        <table class="comparison-table">
+            <tr><th>Scenario</th><th>Tool / Feature</th></tr>
+            <tr><td>Measure deployment performance</td><td>DORA Metrics</td></tr>
+            <tr><td>Visualize where work is piling up</td><td>Cumulative Flow Diagram</td></tr>
+            <tr><td>Plan sprint capacity</td><td>Azure Boards Sprints + Velocity chart</td></tr>
+            <tr><td>Auto-assign reviewer by file path</td><td>CODEOWNERS / Required Reviewer Policy</td></tr>
+            <tr><td>Block merge if CI fails</td><td>Branch Policy: Build Validation</td></tr>
+            <tr><td>Enforce commit message format</td><td>commit-msg Git hook (client-side)</td></tr>
+            <tr><td>Prevent push to main without PR</td><td>Branch Policy on main branch</td></tr>
+            <tr><td>Store large binaries in Git repo</td><td>Git LFS</td></tr>
+            <tr><td>Measure code quality &amp; technical debt</td><td>SonarQube / SonarCloud</td></tr>
+            <tr><td>Block PR if coverage drops</td><td>SonarQube Quality Gate</td></tr>
+            <tr><td>Share repos across internal teams</td><td>Inner Source + forking workflow</td></tr>
+            <tr><td>Track releases with a fixed Git pointer</td><td>Git Tags</td></tr>
+        </table>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--purple)"></span> Must-Memorize Facts</div>
+    <div class="panel-body">
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>DevOps = people + process + products.</strong> Culture matters as much as tools.</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>4 DORA metrics:</strong> Deployment Frequency, Lead Time, MTTR, Change Failure Rate. First two = speed. Last two = stability.</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Trunk-based</strong> = no long-lived branches, everyone commits to main. Best for CI/CD. Gitflow = complex, for versioned/scheduled releases.</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Client-side hooks can be bypassed</strong> (--no-verify). Server-side hooks cannot. Use server-side for real enforcement.</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Git LFS</strong> = large binary files outside repo. Pointer files in repo. Solves slow clone performance.</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>SonarQube Quality Gate</strong> = blocks PR/build if quality thresholds not met. Reliability, Security, Maintainability ratings (A–E).</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Build Validation branch policy</strong> = runs CI pipeline on every PR. Cannot merge if pipeline fails.</div></div>
+        <div class="callout exam"><span class="ci">🎯</span><div><strong>Tags = immutable.</strong> Branches = advance with commits. Use tags to mark releases.</div></div>
+    </div>
+</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header"><span class="ph-dot" style="background:var(--yellow)"></span> Master Flash Cards — LP1</div>
+    <div class="panel-body">
+        <button class="reveal-all-btn" onclick="revealAll('fc-master')">Reveal All Answers</button>
+        <div class="flash-grid" id="fc-master">
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Name the 5 pillars of CALMS.</div>
+                <div class="a">Culture, Automation, Lean, Measurement, Sharing. DevOps framework — culture is the hardest and most important. Tools (automation) are just one piece.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">DORA elite performers — what's the Lead Time benchmark?</div>
+                <div class="a">Less than 1 hour from commit to production. Elite Deployment Frequency = multiple times per day. MTTR elite = less than 1 hour. Change Failure Rate elite = 0–15%.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What is the main risk of long-lived feature branches?</div>
+                <div class="a">Merge conflicts accumulate over time. The longer a branch lives, the harder the merge. Long-lived branches are the anti-pattern that trunk-based development is designed to avoid.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Branch policy: Build Validation — what does it enforce?</div>
+                <div class="a">Triggers a CI pipeline run against the PR. The PR cannot be merged if the pipeline fails. Enforces that every code change passes automated tests before reaching main.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">Squash merge vs rebase — key differences?</div>
+                <div class="a">Squash: all feature commits collapsed into 1 commit on main. Clean history but loses individual commit detail. Rebase: replays commits linearly, rewrites SHA hashes — never rebase shared/public branches.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+            <div class="flash-card" onclick="this.classList.toggle('revealed')">
+                <div class="q">What files make a repo "inner source ready"?</div>
+                <div class="a">README.md (what/how), CONTRIBUTING.md (how to contribute), CODEOWNERS (who reviews), CODE_OF_CONDUCT.md, issue templates. Plus a Trusted Committer who reviews external PRs.</div>
+                <div class="flash-hint">Click to reveal</div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+function showTab(id){
+    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.wf-tab').forEach(t=>t.classList.remove('active'));
+    const el=document.getElementById(id);
+    if(el) el.classList.add('active');
+    document.querySelectorAll('.wf-tab').forEach(t=>{
+        if(t.getAttribute('onclick')===`showTab('${id}')`) t.classList.add('active');
+    });
+}
+function revealAll(gridId){
+    document.querySelectorAll(`#${gridId} .flash-card`).forEach(c=>c.classList.add('revealed'));
+}
+</script>
+</body>
+</html>
